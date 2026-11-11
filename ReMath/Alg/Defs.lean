@@ -21,28 +21,29 @@ class MulMonoid (M : Type _) extends One M, Mul M, Pow M Nat where
   mul_one (a : M) : a * 1 = a
   one_mul (a : M) : 1 * a = a
   mul_assoc (a b c : M) : (a * b) * c = a * (b * c)
-  npow_zero (a : M) : a ^ 0 = 1
-  npow_succ (n : Nat) (a : M) : a ^ (n + 1) = a ^ n * a
+  pow_zero (a : M) : a ^ 0 = 1
+  pow_succ (a : M) (n : Nat) : a ^ (n + 1) = a ^ n * a
 
 class MulCommMonoid (M : Type _) extends MulMonoid M where
   mul_comm (a b : M) : a * b = b * a
 
-export MulMonoid (mul_one one_mul mul_assoc npow_zero npow_succ)
+export MulMonoid (mul_one one_mul mul_assoc pow_zero pow_succ)
 export MulCommMonoid (mul_comm)
 
-attribute [simp] mul_one one_mul mul_assoc npow_zero npow_succ mul_comm
+attribute [simp] mul_one one_mul mul_assoc pow_zero pow_succ mul_comm
 
 /-- A semiring with a canonical `NatCast` action. -/
 class Semiring (M : Type _) extends AddCommMonoid M, MulMonoid M, NatCast M where
   zero_mul (a : M) : 0 * a = 0
   mul_zero (a : M) : a * 0 = 0
-  left_distrib (a b c : M) : a * (b + c) = a * b + a * c
-  right_distrib (a b c : M) : (b + c) * a = b * a + c * a
+  mul_add (a b c : M) : a * (b + c) = a * b + a * c
+  add_mul (a b c : M) : (a + b) * c = a * c + b * c
   natCast_zero : natCast 0 = 0
   natCast_succ (n : Nat) : natCast (n + 1) = natCast n + 1
 
-export Semiring (zero_mul mul_zero left_distrib right_distrib
-  natCast_zero natCast_succ)
+class CommSemiring (M : Type _) extends Semiring M, MulCommMonoid M
+
+export Semiring (zero_mul mul_zero mul_add add_mul natCast_zero natCast_succ)
 
 attribute [simp] zero_mul mul_zero natCast_zero
 
@@ -51,5 +52,13 @@ theorem ofNat_zero {M} [AddMonoid M] : (Zero.zero : M) = (0 : M) := rfl
 
 @[simp]
 theorem ofNat_one {M} [MulMonoid M] : (One.one : M) = (1 : M) := rfl
+
+class Ring (M : Type _) extends Semiring M, Neg M, Sub M where
+  neg_add_cancel (a : M) : -a + a = 0
+  sub_eq_add_neg (a b : M) : a - b = a + -b
+
+export Ring (neg_add_cancel sub_eq_add_neg)
+
+class CommRing (M : Type _) extends Ring M, CommSemiring M
 
 end Alg
