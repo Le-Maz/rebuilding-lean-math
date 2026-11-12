@@ -201,6 +201,12 @@ theorem ofNat_eq_natCast {M} [Semiring M] (n : Nat) :
   · change NatCast.natCast (n + 2) = NatCast.natCast (n + 2)
     simp [natCast_succ]
 
+theorem ite_mul {α : Type _} [Mul α]
+    (p : Prop) [Decidable p] (a b c : α) :
+    (if p then a else b) * c =
+      if p then a * c else b * c := by
+  split <;> rfl
+
 instance {M} [Semiring M] : Lean.Grind.Semiring M where
   add_zero := add_zero
   zero_mul := zero_mul

@@ -108,4 +108,23 @@ export Field (zero_ne_one mul_inv_cancel)
 
 attribute [simp] inv_zero
 
+/--
+A module over a semiring `R`: an additive commutative monoid `M` with a
+scalar action of `R` compatible with the ring and monoid structures.
+-/
+class Module (R M : Type _) [Semiring R] [AddCommMonoid M] extends SMul R M where
+  one_smul (a : M) : (1 : R) • a = a
+  mul_smul (r s : R) (a : M) : (r * s) • a = r • s • a
+  smul_zero (r : R) : r • (0 : M) = 0
+  smul_add (r : R) (a b : M) : r • (a + b) = r • a + r • b
+  add_smul (r s : R) (a : M) : (r + s) • a = r • a + s • a
+  zero_smul (a : M) : (0 : R) • a = 0
+
+export Module (one_smul mul_smul smul_zero smul_add add_smul zero_smul)
+
+attribute [simp] one_smul smul_zero zero_smul
+
+/-- A vector space is a module over a field with an additive group of vectors. -/
+class VectorSpace (K V : Type _) [Field K] [AddCommGroup V] extends Module K V
+
 end Alg
