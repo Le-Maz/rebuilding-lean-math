@@ -53,6 +53,16 @@ instance {M} [AddCommMonoid M] : Lean.Grind.AddCommMonoid M where
   add_comm := add_comm
   add_assoc := add_assoc
 
+@[simp]
+theorem nsmul_add {M} [AddCommMonoid M] (n : Nat) (a b : M) :
+    n • (a + b) = n • a + n • b := by
+  induction n with
+  | zero =>
+    simp
+  | succ n ih =>
+    simp only [succ_nsmul, ih]
+    ac_rfl
+
 end AddCommMonoid
 
 section AddCommGroup
@@ -111,13 +121,6 @@ theorem nsmul_mul {M} [Semiring M] (n : Nat) (a b : M) :
 theorem mul_nsmul {M} [Semiring M] (a : M) (n : Nat) (b : M) :
     a * (n • b) = n • (a * b) := by
   rw [← mul_natCast_eq_nsmul, ← mul_assoc, mul_natCast_eq_nsmul]
-
-/-- A natural scalar distributes over addition. -/
-@[simp]
-theorem nsmul_add {M} [Semiring M] (n : Nat) (a b : M) :
-    n • (a + b) = n • a + n • b := by
-  rw [← natCast_mul_eq_nsmul, mul_add, natCast_mul_eq_nsmul,
-    natCast_mul_eq_nsmul]
 
 @[simp]
 theorem natCast_pow {M} [Semiring M] (m n : Nat) :

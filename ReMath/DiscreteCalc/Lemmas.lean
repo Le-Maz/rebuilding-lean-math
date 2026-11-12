@@ -54,7 +54,7 @@ theorem sum_const {M : Type _} [Alg.AddMonoid M] (x : M) (n : Nat) :
     rw [sum_succ', Alg.succ_nsmul]
     congr 1
 
-theorem nsmul_sum {M : Type _} [Alg.Semiring M] (f : Nat → M) (k n : Nat) :
+theorem nsmul_sum {M : Type _} [Alg.AddCommMonoid M] (f : Nat → M) (k n : Nat) :
     k • ∑ f n = ∑ (fun i => k • f i) n := by
   induction n with
   | zero =>
