@@ -1,9 +1,10 @@
+import ReMath.Alg.Defs
 import ReMath.Alg.Core
 import ReMath.Alg.Lemmas
-import ReMath.Fwd.Defs
-import ReMath.Fwd.Lemmas
-import ReMath.Sum.Defs
-import ReMath.Sum.Lemmas
+import ReMath.DiscreteCalc.Defs
+import ReMath.DiscreteCalc.Lemmas
+
+namespace DiscreteCalc
 
 private theorem Nat.pow_sub_pow_succ (a b n : Nat) (hab : a ≥ b) :
     a ^ (n + 1) - b ^ (n + 1) =
@@ -62,7 +63,7 @@ theorem Nat.pow_sub_pow (a b n : Nat) (hab : a ≥ b) :
     have h1 : b * b ^ n ≤ b * a ^ n :=
       Nat.mul_le_mul_left b h0
     have h2 : b * a ^ n ≤ a * a ^ n :=
-      mul_le_mul_right (a ^ n) hab
+      Nat.mul_le_mul_right (a ^ n) hab
     have h3 : b * b ^ n ≤ a * b ^ n :=
       Nat.mul_le_mul_right (b ^ n) hab
     have h4 : a * b ^ n ≤ a * a ^ n :=
@@ -98,19 +99,4 @@ theorem Nat.not_two_dvd_fwd_sq (n : Nat) : ¬ 2 ∣ Δ (· ^ 2) n :=
     absurd h2 h3
   Nat.fwd_sq n ▸ h
 
-/-- The sum of forward differences telescopes. -/
-theorem sum_fwd {M : Type _} [Alg.Ring M] (f : Nat → M) (n : Nat) :
-    ∑ Δ f n = f n - f 0 := by
-  induction n with
-  | zero =>
-    rw [sum_zero, Alg.sub_self]
-  | succ n ih =>
-    rw [sum_succ', ih]
-    exact Alg.sub_add_sub_cancel (f n) (f 0) (f (n + 1))
-
-/-- The forward difference of a sum recovers the summand. -/
-theorem fwd_sum {M : Type _} [Alg.Ring M] (f : Nat → M) (n : Nat) :
-    Δ ∑ f n = f n := by
-  change ∑ f (n + 1) - ∑ f n = f n
-  rw [sum_succ']
-  exact Alg.add_sub_cancel_left (∑ f n) (f n)
+end DiscreteCalc

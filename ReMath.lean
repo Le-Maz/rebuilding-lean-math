@@ -1,3 +1,6 @@
--- This module serves as the root of the `ReMath` library.
--- Import modules here that should be built as part of the library.
-import ReMath.Basic
+import ReMath.Alg.Defs
+import ReMath.Alg.Core
+import ReMath.Alg.Lemmas
+import ReMath.DiscreteCalc.Defs
+import ReMath.DiscreteCalc.Lemmas
+import ReMath.DiscreteCalc.Theorems
