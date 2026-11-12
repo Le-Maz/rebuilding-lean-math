@@ -90,16 +90,21 @@ export Ring (intCast_ofNat intCast_neg)
 
 class CommRing (M : Type _) extends Ring M, CommSemiring M
 
-class Field (M : Type _) extends CommRing M, Inv M, Div M, HPow M Int M where
-  zero_ne_one : (0 : M) ≠ 1
+/-- Total inverse, division and integer powers on a commutative ring. -/
+class InvRing (M : Type _) extends CommRing M, Inv M, Div M, HPow M Int M where
   inv_zero : (0 : M)⁻¹ = 0
-  mul_inv_cancel (a : M) (ha : a ≠ 0) : a * a⁻¹ = 1
   div_eq_mul_inv (a b : M) : a / b = a * b⁻¹
   zpow_zero : ∀ a : M, a ^ (0 : Int) = 1
   zpow_succ : ∀ (a : M) (n : Nat), a ^ (n + 1 : Int) = a ^ (n : Int) * a
   zpow_neg : ∀ (a : M) (n : Int), a ^ (-n) = (a ^ n)⁻¹
 
-export Field (zero_ne_one inv_zero mul_inv_cancel div_eq_mul_inv zpow_zero zpow_succ zpow_neg)
+export InvRing (inv_zero div_eq_mul_inv zpow_zero zpow_succ zpow_neg)
+
+class Field (M : Type _) extends InvRing M where
+  zero_ne_one : (0 : M) ≠ 1
+  mul_inv_cancel (a : M) (ha : a ≠ 0) : a * a⁻¹ = 1
+
+export Field (zero_ne_one mul_inv_cancel)
 
 attribute [simp] inv_zero
 
