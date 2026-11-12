@@ -255,4 +255,13 @@ end Ring
 instance {M} [CommRing M] : Lean.Grind.CommRing M where
   mul_comm := mul_comm
 
+instance {M} [Field M] : Lean.Grind.Field M where
+  div_eq_mul_inv := div_eq_mul_inv
+  zero_ne_one := zero_ne_one
+  inv_zero := inv_zero
+  mul_inv_cancel := mul_inv_cancel _
+  zpow_zero := zpow_zero
+  zpow_succ := zpow_succ
+  zpow_neg := zpow_neg
+
 end Alg

@@ -92,3 +92,6 @@ instance : Alg.Field Rat where
   inv_zero := Rat.inv_zero
   mul_inv_cancel := Rat.mul_inv_cancel
   div_eq_mul_inv := Rat.div_def
+  zpow_zero := Rat.zpow_zero
+  zpow_succ := Rat.pow_succ
+  zpow_neg := Rat.zpow_neg
