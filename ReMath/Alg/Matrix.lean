@@ -434,7 +434,7 @@ instance {α} [Ring α] {n : Nat} :
     · simp only [if_neg h]
       exact neg_zero_eq.symm
 
-instance {α} [Semiring α] {n : Nat} : Module (Matrix α n n) (Vector α n) where
+instance {α} [Semiring α] {n : Nat} : Semimodule (Matrix α n n) (Vector α n) where
   one_smul v := by
     apply Vector.ext_fin
     intro i
@@ -469,6 +469,8 @@ instance {α} [Semiring α] {n : Nat} : Module (Matrix α n n) (Vector α n) whe
     simp only [Fin.getElem_fin, get_smul]
     simp only [get₂_zero, zero_mul, Alg.Vector.getElem_zero]
     simp only [finSum_const_zero]
+
+instance {α} [Ring α] {n : Nat} : Module (Matrix α n n) (Vector α n) where
 
 end Matrix
 
