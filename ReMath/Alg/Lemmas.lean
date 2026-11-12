@@ -71,6 +71,67 @@ instance {M} [AddCommGroup M] : Lean.Grind.AddCommGroup M where
   neg_add_cancel := neg_add_cancel
   sub_eq_add_neg := sub_eq_add_neg
 
+/-- A ring element plus its negation is zero. -/
+theorem add_neg_cancel {M} [AddCommGroup M] (a : M) : a + -a = 0 := by
+  rw [add_comm]
+  exact neg_add_cancel a
+
+@[simp]
+theorem sub_self {M} [AddCommGroup M] (x : M) : x - x = 0 := by
+  rw [Alg.sub_eq_add_neg, Alg.add_neg_cancel]
+
+/-- Negation fixes zero. -/
+@[simp]
+theorem neg_zero {M} [AddCommGroup M] : -(0 : M) = 0 := by
+  have h := neg_add_cancel (0 : M)
+  rw [add_zero] at h
+  exact h
+
+@[simp]
+theorem sub_zero {M} [AddCommGroup M] (x : M) : x - 0 = x := by
+  rw [Alg.sub_eq_add_neg, neg_zero, add_zero]
+
+/-- Consecutive differences telescope: `(a - b) + (c - a) = c - b`. -/
+theorem sub_add_sub_cancel {M} [AddCommGroup M] (a b c : M) :
+    (a - b) + (c - a) = c - b := by
+  rw [sub_eq_add_neg, sub_eq_add_neg, sub_eq_add_neg, add_comm a (-b),
+    add_comm c (-a), add_assoc, ← add_assoc a (-a) c, add_neg_cancel,
+    zero_add, add_comm]
+
+/-- Adding then subtracting the same element cancels it. -/
+theorem add_sub_cancel_left {M} [AddCommGroup M] (a b : M) : a + b - a = b := by
+  rw [sub_eq_add_neg, add_comm a b, add_assoc, add_neg_cancel, add_zero]
+
+/-- An additive inverse is unique: if `a + b = 0` then `b = -a`. -/
+theorem neg_eq_of_add_eq_zero {M} [AddCommGroup M] {a b : M} (h : a + b = 0) :
+    b = -a := by
+  calc
+    b = 0 + b := (zero_add b).symm
+    _ = -a + a + b := by rw [neg_add_cancel]
+    _ = -a + (a + b) := add_assoc _ _ _
+    _ = -a := by rw [h, add_zero]
+
+/-- Negation reverses addition (in a ring the order does not matter). -/
+theorem neg_add {M} [AddCommGroup M] (a b : M) : -(a + b) = -a + -b := by
+  have h : a + b + (-a + -b) = 0 := by
+    rw [add_assoc, ← add_assoc b, add_comm b (-a), add_assoc, add_neg_cancel,
+      add_zero, add_neg_cancel]
+  exact (neg_eq_of_add_eq_zero h).symm
+
+/-- Negation reverses addition (in a ring the order does not matter). -/
+theorem sub_add {M} [AddCommGroup M] (a b c : M) : a - (b + c) = a - b - c := by
+  simp [sub_eq_add_neg, neg_add, add_assoc]
+
+/-- Negation reverses addition (in a ring the order does not matter). -/
+theorem add_sub_assoc {M} [AddCommGroup M] (a b c : M) : a + (b - c) = a + b - c := by
+  simp [sub_eq_add_neg, add_assoc]
+
+/-- Negation is an involution. -/
+theorem neg_neg {M} [AddCommGroup M] (a : M) : -(-a) = a := by
+  symm
+  apply neg_eq_of_add_eq_zero
+  exact neg_add_cancel a
+
 end AddCommGroup
 
 section Semiring
@@ -166,46 +227,6 @@ instance {M} [CommSemiring M] : Lean.Grind.CommSemiring M where
 
 section Ring
 
-/-- A ring element plus its negation is zero. -/
-theorem add_neg_cancel {M} [Ring M] (a : M) : a + -a = 0 := by
-  rw [add_comm]
-  exact neg_add_cancel a
-
-@[simp]
-theorem sub_self {M} [Ring M] (x : M) : x - x = 0 := by
-  rw [Alg.sub_eq_add_neg, Alg.add_neg_cancel]
-
-/-- Negation fixes zero. -/
-@[simp]
-theorem neg_zero {M} [Ring M] : -(0 : M) = 0 := by
-  have h := neg_add_cancel (0 : M)
-  rw [add_zero] at h
-  exact h
-
-@[simp]
-theorem sub_zero {M} [Ring M] (x : M) : x - 0 = x := by
-  rw [Alg.sub_eq_add_neg, neg_zero, add_zero]
-
-/-- Consecutive differences telescope: `(a - b) + (c - a) = c - b`. -/
-theorem sub_add_sub_cancel {M} [Ring M] (a b c : M) :
-    (a - b) + (c - a) = c - b := by
-  rw [sub_eq_add_neg, sub_eq_add_neg, sub_eq_add_neg, add_comm a (-b),
-    add_comm c (-a), add_assoc, ← add_assoc a (-a) c, add_neg_cancel,
-    zero_add, add_comm]
-
-/-- Adding then subtracting the same element cancels it. -/
-theorem add_sub_cancel_left {M} [Ring M] (a b : M) : a + b - a = b := by
-  rw [sub_eq_add_neg, add_comm a b, add_assoc, add_neg_cancel, add_zero]
-
-/-- An additive inverse is unique: if `a + b = 0` then `b = -a`. -/
-theorem neg_eq_of_add_eq_zero {M} [Ring M] {a b : M} (h : a + b = 0) :
-    b = -a := by
-  calc
-    b = 0 + b := (zero_add b).symm
-    _ = -a + a + b := by rw [neg_add_cancel]
-    _ = -a + (a + b) := add_assoc _ _ _
-    _ = -a := by rw [h, add_zero]
-
 theorem mul_neg {M} [Ring M] (a b : M) : a * -b = -(a * b) :=
   neg_eq_of_add_eq_zero (by rw [← mul_add, add_neg_cancel, mul_zero])
 
@@ -219,21 +240,6 @@ theorem mul_sub {M} [Ring M] (a b c : M) : a * (b - c) = a * b - a * c := by
 /-- Multiplication distributes over subtraction on the right. -/
 theorem sub_mul {M} [Ring M] (a b c : M) : (a - b) * c = a * c - b * c := by
   rw [sub_eq_add_neg, sub_eq_add_neg, add_mul, neg_mul]
-
-/-- Negation reverses addition (in a ring the order does not matter). -/
-theorem neg_add {M} [Ring M] (a b : M) : -(a + b) = -a + -b := by
-  have h : a + b + (-a + -b) = 0 := by
-    rw [add_assoc, ← add_assoc b, add_comm b (-a), add_assoc, add_neg_cancel,
-      add_zero, add_neg_cancel]
-  exact (neg_eq_of_add_eq_zero h).symm
-
-/-- Negation reverses addition (in a ring the order does not matter). -/
-theorem sub_add {M} [Ring M] (a b c : M) : a - (b + c) = a - b - c := by
-  simp [sub_eq_add_neg, neg_add, add_assoc]
-
-/-- Negation reverses addition (in a ring the order does not matter). -/
-theorem add_sub_assoc {M} [Ring M] (a b c : M) : a + (b - c) = a + b - c := by
-  simp [sub_eq_add_neg, add_assoc]
 
 theorem natCast_zsmul {M} [AddGroup M] (n : Nat) (a : M) :
     (n : Int) • a = n • a := by

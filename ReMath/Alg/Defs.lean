@@ -24,7 +24,7 @@ class AddCommMonoid (M : Type _) extends AddMonoid M where
 export AddMonoid (add_zero zero_add add_assoc zero_nsmul succ_nsmul)
 export AddCommMonoid (add_comm)
 
-attribute [simp] add_zero zero_add add_assoc zero_nsmul succ_nsmul add_comm
+attribute [simp] add_zero zero_add zero_nsmul succ_nsmul
 
 class AddGroup (M : Type _) extends AddMonoid M, Neg M, Sub M, ZSMul M where
   neg_add_cancel (a : M) : -a + a = 0
@@ -54,7 +54,7 @@ class MulCommMonoid (M : Type _) extends MulMonoid M where
 export MulMonoid (mul_one one_mul mul_assoc pow_zero pow_succ)
 export MulCommMonoid (mul_comm)
 
-attribute [simp] mul_one one_mul mul_assoc pow_zero pow_succ mul_comm
+attribute [simp] mul_one one_mul mul_assoc pow_zero pow_succ
 
 /-- A semiring with a canonical `NatCast` action. -/
 class Semiring (M : Type _) extends AddCommMonoid M, MulMonoid M, NatCast M where
@@ -82,7 +82,7 @@ instance {M} [inst : Semiring M] : (n : Nat) → OfNat M n
   | 1 => ⟨One.one⟩
   | n => ⟨NatCast.natCast n⟩
 
-class Ring (M : Type _) extends Semiring M, AddGroup M, IntCast M where
+class Ring (M : Type _) extends Semiring M, AddCommGroup M, IntCast M where
   intCast_ofNat (n : Nat) : intCast n = natCast n
   intCast_neg (z : Int) : intCast (-z) = -intCast z
 

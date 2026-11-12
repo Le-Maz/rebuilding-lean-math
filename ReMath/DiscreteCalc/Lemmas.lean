@@ -89,4 +89,64 @@ theorem fwd_sum {M : Type _} [Alg.Ring M] (f : Nat → M) (n : Nat) :
   rw [sum_succ']
   exact Alg.add_sub_cancel_left (∑ f n) (f n)
 
+/-- Negation distributes over finite sums. -/
+theorem sum_neg {M : Type _} [Alg.AddCommGroup M]
+    (f : Nat → M) (n : Nat) :
+    ∑ (fun i => -f i) n = -(∑ f n) := by
+  induction n with
+  | zero =>
+    simp [sum_zero]
+  | succ n ih =>
+    rw [sum_succ', sum_succ', ih]
+    simp [Alg.neg_add]
+
+/-- Finite sums distribute over addition. -/
+theorem sum_add {M : Type _} [Alg.AddCommMonoid M]
+    (f g : Nat → M) (n : Nat) :
+    ∑ (fun i => f i + g i) n =
+      ∑ f n + ∑ g n := by
+  induction n with
+  | zero =>
+    simp [sum_zero]
+  | succ n ih =>
+    rw [sum_succ', sum_succ', sum_succ', ih]
+    ac_rfl
+
+/-- Finite sums distribute over subtraction. -/
+theorem sum_sub {M : Type _} [Alg.AddCommGroup M]
+    (f g : Nat → M) (n : Nat) :
+    ∑ (fun i => f i - g i) n =
+      ∑ f n - ∑ g n := by
+  simp [Alg.sub_eq_add_neg, sum_add, sum_neg]
+
+/-- Discrete summation by parts. -/
+theorem sum_parts {M : Type _} [Alg.Ring M]
+    (f g : Nat → M) (n : Nat) :
+    ∑ (fun i => f i * Δ g i) n =
+      f n * g n - f 0 * g 0 -
+        ∑ (fun i => Δ f i * g (i + 1)) n := by
+  have hpoint (i : Nat) :
+      f i * Δ g i =
+        Δ (fun j => f j * g j) i -
+          Δ f i * g (i + 1) := by
+    rw [fwd_mul, ← Alg.add_sub_assoc]
+    rw [← Alg.mul_sub]
+    simp only [fwd] at *
+    grind only
+
+  calc
+    ∑ (fun i => f i * Δ g i) n =
+        ∑ (fun i =>
+          Δ (fun j => f j * g j) i -
+            Δ f i * g (i + 1)) n := by
+              congr 1
+              funext i
+              exact hpoint i
+    _ = (∑ (fun i => Δ (fun j => f j * g j) i) n) -
+        (∑ (fun i => Δ f i * g (i + 1)) n) := by
+          exact sum_sub _ _ _
+    _ = f n * g n - f 0 * g 0 -
+        ∑ (fun i => Δ f i * g (i + 1)) n := by
+          rw [sum_fwd]
+
 end DiscreteCalc
