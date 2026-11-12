@@ -149,17 +149,16 @@ theorem sum_parts {M : Type _} [Alg.Ring M]
         ∑ (fun i => Δ f i * g (i + 1)) n := by
           rw [sum_fwd]
 
-/-- Shifting the index of a finite sum by one. -/
-theorem sum_shift {M : Type _} [Alg.AddCommGroup M]
+/-- Shifting a finite sum by one, without requiring subtraction. -/
+theorem sum_shift {M : Type _} [Alg.AddMonoid M]
     (f : Nat → M) (n : Nat) :
-    ∑ (fun i => f (i + 1)) n =
-      ∑ f n + f n - f 0 := by
+    f 0 + ∑ (fun i => f (i + 1)) n =
+      ∑ f n + f n := by
   induction n with
   | zero =>
     simp [sum_zero]
   | succ n ih =>
-    rw [sum_succ', sum_succ', ih]
-    simp only [Alg.sub_eq_add_neg]
-    ac_rfl
+    rw [sum_succ', sum_succ']
+    rw [← Alg.add_assoc, ih]
 
 end DiscreteCalc
