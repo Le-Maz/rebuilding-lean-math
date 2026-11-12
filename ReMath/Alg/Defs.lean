@@ -90,4 +90,14 @@ export Ring (intCast_ofNat intCast_neg)
 
 class CommRing (M : Type _) extends Ring M, CommSemiring M
 
+class Field (M : Type _) extends CommRing M, Inv M, Div M where
+  zero_ne_one : (0 : M) ≠ 1
+  inv_zero : (0 : M)⁻¹ = 0
+  mul_inv_cancel (a : M) (ha : a ≠ 0) : a * a⁻¹ = 1
+  div_eq_mul_inv (a b : M) : a / b = a * b⁻¹
+
+export Field (zero_ne_one inv_zero mul_inv_cancel div_eq_mul_inv)
+
+attribute [simp] inv_zero
+
 end Alg

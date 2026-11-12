@@ -1,4 +1,4 @@
-import ReMath.Alg.Nat
+import ReMath.Alg.Core
 import ReMath.Alg.Lemmas
 import ReMath.Fwd.Defs
 import ReMath.Fwd.Lemmas
