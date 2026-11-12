@@ -225,6 +225,11 @@ instance {α} [Zero α] [IntCast α] {n : Nat} :
     IntCast (Matrix α n n) where
   intCast k := ofFn₂ fun i j => if i = j then (k : α) else 0
 
+/-- Pointwise scalar multiplication of matrices. -/
+instance {α} [Mul α] {n m : Nat} :
+    SMul α (Matrix α n m) where
+  smul a A := ofFn₂ fun i j => a * A.get₂ i j
+
 @[simp]
 theorem get₂_zero {α} [Zero α] {n m : Nat}
     (i : Fin n) (j : Fin m) :
@@ -297,6 +302,13 @@ theorem get₂_intCast {α} [Zero α] [IntCast α] {n : Nat}
     (k : Int) (i j : Fin n) :
     get₂ (Int.cast k : Matrix α n n) i j =
       if i = j then (k : α) else 0 := by
+  change (Matrix.ofFn₂ _).get₂ _ _ = _
+  simp only [get₂_ofFn₂]
+
+@[simp]
+theorem get₂_smul {α} [Mul α] {n m : Nat}
+    (a : α) (A : Matrix α n m) (i : Fin n) (j : Fin m) :
+    get₂ (a • A) i j = a * get₂ A i j := by
   change (Matrix.ofFn₂ _).get₂ _ _ = _
   simp only [get₂_ofFn₂]
 
@@ -471,6 +483,30 @@ instance {α} [Semiring α] {n : Nat} : Semimodule (Matrix α n n) (Vector α n)
     simp only [finSum_const_zero]
 
 instance {α} [Ring α] {n : Nat} : Module (Matrix α n n) (Vector α n) where
+
+/-- Matrices over a semiring form a semimodule. -/
+instance {α} [Semiring α] {n m : Nat} :
+    Semimodule α (Matrix α n m) where
+  one_smul A := ext₂ _ _ fun i j => by
+    simp [get₂_smul, one_mul]
+  mul_smul a b A := ext₂ _ _ fun i j => by
+    simp [get₂_smul, mul_assoc]
+  smul_zero a := ext₂ _ _ fun i j => by
+    simp [get₂_smul]
+  smul_add a A B := ext₂ _ _ fun i j => by
+    simp [get₂_smul, mul_add]
+  add_smul a b A := ext₂ _ _ fun i j => by
+    simp [get₂_smul, add_mul]
+  zero_smul A := ext₂ _ _ fun i j => by
+    simp [get₂_smul]
+
+/-- Matrices over a ring form a module. -/
+instance {α} [Ring α] {n m : Nat} :
+    Module α (Matrix α n m) where
+
+/-- Matrices over a field form a vector space. -/
+instance {K} [Field K] {n m : Nat} :
+    VectorSpace K (Matrix K n m) where
 
 end Matrix
 

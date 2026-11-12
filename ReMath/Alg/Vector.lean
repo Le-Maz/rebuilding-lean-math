@@ -74,6 +74,11 @@ instance {α} [HPow α Int α] {n : Nat} :
     HPow (Vector α n) Int (Vector α n) where
   hPow a k := Vector.ofFn fun i => HPow.hPow a[i] k
 
+/-- Pointwise scalar multiplication of vectors. -/
+instance {α} [Mul α] {n : Nat} :
+    SMul α (Vector α n) where
+  smul a v := Vector.ofFn fun i => a * v[i]
+
 @[simp]
 theorem getElem_zero {α} [Zero α] {n : Nat}
     (i : Fin n) :
@@ -169,6 +174,13 @@ theorem getElem_pow {α} [Pow α Nat] {n : Nat}
 theorem getElem_zpow {α} [HPow α Int α] {n : Nat}
     (a : Vector α n) (k : Int) (i : Fin n) :
     (HPow.hPow a k : Vector α n)[i.val] = HPow.hPow a[i.val] k := by
+  change (Vector.ofFn _)[i.val] = _
+  exact Vector.getElem_ofFn i.isLt
+
+@[simp]
+theorem getElem_smul {α} [Mul α] {n : Nat}
+    (a : α) (v : Vector α n) (i : Fin n) :
+    (a • v)[i.val] = a * v[i.val] := by
   change (Vector.ofFn _)[i.val] = _
   exact Vector.getElem_ofFn i.isLt
 
@@ -306,6 +318,27 @@ instance {α} [InvRing α] {n : Nat} :
   zpow_neg a z := ext_fin fun i => by
     simp only [Fin.getElem_fin, getElem_zpow, getElem_inv]
     exact zpow_neg _ _
+
+/-- Vectors over a semiring form a semimodule under pointwise scalar multiplication. -/
+instance {α} [Semiring α] {n : Nat} : Semimodule α (Vector α n) where
+  one_smul v := ext_fin fun i => by
+    simp [getElem_smul, one_mul]
+  mul_smul a b v := ext_fin fun i => by
+    simp [getElem_smul, mul_assoc]
+  smul_zero a := ext_fin fun i => by
+    simp [getElem_smul]
+  smul_add a v w := ext_fin fun i => by
+    simp [getElem_smul, mul_add]
+  add_smul a b v := ext_fin fun i => by
+    simp [getElem_smul, add_mul]
+  zero_smul v := ext_fin fun i => by
+    simp [getElem_smul]
+
+/-- Vectors over a ring form a module under pointwise scalar multiplication. -/
+instance {α} [Ring α] {n : Nat} : Module α (Vector α n) where
+
+/-- Vectors over a field form a vector space. -/
+instance {K} [Field K] {n : Nat} : VectorSpace K (Vector K n) where
 
 end Vector
 
