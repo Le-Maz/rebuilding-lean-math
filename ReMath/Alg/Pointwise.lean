@@ -59,6 +59,10 @@ instance [NSMul α] : NSMul (Pointwise ι α) := ⟨⟨fun n f i => n • f i⟩
 /-- Pointwise integer scalar action. -/
 instance [ZSMul α] : ZSMul (Pointwise ι α) := ⟨⟨fun z f i => z • f i⟩⟩
 
+/-- Pointwise scalar multiplication. -/
+instance [Mul α] : SMul α (Pointwise ι α) where
+  smul a f := fun i => a * f i
+
 @[simp] theorem zero_apply [Zero α] (i : ι) : (0 : Pointwise ι α) i = 0 := rfl
 
 @[simp] theorem one_apply [One α] (i : ι) : (1 : Pointwise ι α) i = 1 := rfl
@@ -74,6 +78,9 @@ instance [ZSMul α] : ZSMul (Pointwise ι α) := ⟨⟨fun z f i => z • f i⟩
 
 @[simp] theorem sub_apply [Sub α] (f g : Pointwise ι α) (i : ι) :
     (f - g) i = f i - g i := rfl
+
+@[simp] theorem smul_apply [Mul α] (a : α) (f : Pointwise ι α) (i : ι) :
+    (a • f) i = a * f i := rfl
 
 instance [AddMonoid α] : AddMonoid (Pointwise ι α) where
   add_zero f := ext fun i => add_zero (f i)
@@ -121,6 +128,25 @@ instance [Ring α] : Ring (Pointwise ι α) where
   intCast_neg z := ext fun _ => intCast_neg z
 
 instance [CommRing α] : CommRing (Pointwise ι α) where
+
+instance [InvRing α] : InvRing (Pointwise ι α) where
+  inv_zero := ext fun _ => inv_zero
+  div_eq_mul_inv a b := ext fun i => div_eq_mul_inv (a i) (b i)
+  zpow_zero a := ext fun i => zpow_zero (a i)
+  zpow_succ a n := ext fun i => zpow_succ (a i) n
+  zpow_neg a n := ext fun i => zpow_neg (a i) n
+
+instance [Semiring α] : Semimodule α (Pointwise ι α) where
+  one_smul f := ext fun i => by simp [one_mul]
+  mul_smul a b f := ext fun i => by simp [mul_assoc]
+  smul_zero a := ext fun i => by simp
+  smul_add a f g := ext fun i => by simp [mul_add]
+  add_smul a b f := ext fun i => by simp [add_mul]
+  zero_smul f := ext fun i => by simp
+
+instance [Ring α] : Module α (Pointwise ι α) where
+
+instance [Field α] : VectorSpace α (Pointwise ι α) where
 
 end Pointwise
 
