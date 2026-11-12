@@ -35,7 +35,7 @@ private theorem Nat.pow_sub_pow_succ (a b n : Nat) (hab : a ≥ b) :
           by rw [← Nat.mul_add, hp]
 
 /-- Shifting the summation index of the geometric-like sum multiplies it by `a`. -/
-private theorem sum_shift (a b n : Nat) :
+private theorem sum_shift' (a b n : Nat) :
     ∑ (fun i => a ^ (i + 1) * b ^ (n - (i + 1))) n =
       a * ∑ (fun i => a ^ i * b ^ (n - 1 - i)) n := by
   rw [mul_sum]
@@ -54,7 +54,7 @@ theorem Nat.pow_sub_pow (a b n : Nat) (hab : a ≥ b) :
     simp only [sum_succ]
     simp only [Nat.mul_add, Nat.pow_zero, Nat.one_mul, Nat.add_sub_cancel,
       Nat.sub_zero]
-    simp only [Nat.pow_sub_pow_succ a b n hab, sum_shift]
+    simp only [Nat.pow_sub_pow_succ a b n hab, sum_shift']
     generalize ∑ (fun i => a ^ i * b ^ (n - 1 - i)) n = S at *
     simp only [Nat.sub_mul, Nat.mul_sub]
     have h0 : b ^ n ≤ a ^ n := by
