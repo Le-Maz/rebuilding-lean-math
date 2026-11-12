@@ -4,6 +4,7 @@ instance : Alg.Semiring Nat where
   add_zero := Nat.add_zero
   zero_add := Nat.zero_add
   add_assoc := Nat.add_assoc
+  nsmul := inferInstance
   zero_nsmul := Nat.zero_mul
   succ_nsmul := Nat.succ_mul
   add_comm := Nat.add_comm

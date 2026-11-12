@@ -1,7 +1,17 @@
 namespace Alg
 
+class NSMul (M : Type _) where
+  nsmul : SMul Nat M
+
+instance {M} [this : NSMul M] : SMul Nat M := this.nsmul
+
+class ZSMul (M : Type _) where
+  zsmul : SMul Int M
+
+instance {M} [this : ZSMul M] : SMul Int M := this.zsmul
+
 /-- Additive monoid with a canonical `SMul Nat` action. -/
-class AddMonoid (M : Type _) extends Zero M, Add M, SMul Nat M where
+class AddMonoid (M : Type _) extends Zero M, Add M, NSMul M where
   add_zero (a : M) : a + 0 = a
   zero_add (a : M) : 0 + a = a
   add_assoc (a b c : M) : (a + b) + c = a + (b + c)
@@ -15,6 +25,20 @@ export AddMonoid (add_zero zero_add add_assoc zero_nsmul succ_nsmul)
 export AddCommMonoid (add_comm)
 
 attribute [simp] add_zero zero_add add_assoc zero_nsmul succ_nsmul add_comm
+
+class AddGroup (M : Type _) extends AddMonoid M, Neg M, Sub M, ZSMul M where
+  neg_add_cancel (a : M) : -a + a = 0
+  sub_eq_add_neg (a b : M) : a - b = a + -b
+
+  zero_zsmul (a : M) : (0 : Int) • a = 0
+  succ_zsmul (z : Int) (a : M) :
+    (z + 1) • a = z • a + a
+  neg_zsmul (z : Int) (a : M) :
+    (-z) • a = -(z • a)
+
+export AddGroup (neg_add_cancel sub_eq_add_neg zero_zsmul succ_zsmul neg_zsmul)
+
+class AddCommGroup (M : Type _) extends AddGroup M, AddCommMonoid M
 
 /-- Multiplicative monoid with a canonical `Pow M Nat` action. -/
 class MulMonoid (M : Type _) extends One M, Mul M, Pow M Nat where
@@ -53,11 +77,16 @@ theorem ofNat_zero {M} [AddMonoid M] : (Zero.zero : M) = (0 : M) := rfl
 @[simp]
 theorem ofNat_one {M} [MulMonoid M] : (One.one : M) = (1 : M) := rfl
 
-class Ring (M : Type _) extends Semiring M, Neg M, Sub M where
-  neg_add_cancel (a : M) : -a + a = 0
-  sub_eq_add_neg (a b : M) : a - b = a + -b
+instance {M} [inst : Semiring M] : (n : Nat) → OfNat M n
+  | 0 => ⟨Zero.zero⟩
+  | 1 => ⟨One.one⟩
+  | n => ⟨NatCast.natCast n⟩
 
-export Ring (neg_add_cancel sub_eq_add_neg)
+class Ring (M : Type _) extends Semiring M, AddGroup M, IntCast M where
+  intCast_ofNat (n : Nat) : intCast n = natCast n
+  intCast_neg (z : Int) : intCast (-z) = -intCast z
+
+export Ring (intCast_ofNat intCast_neg)
 
 class CommRing (M : Type _) extends Ring M, CommSemiring M
 
