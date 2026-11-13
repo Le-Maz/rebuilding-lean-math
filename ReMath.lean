@@ -1,6 +1,13 @@
 import ReMath.Alg.Defs
 import ReMath.Alg.Core
 import ReMath.Alg.Lemmas
+import ReMath.Alg.Matrix
+import ReMath.Alg.Pointwise
+import ReMath.Alg.Vector
 import ReMath.DiscreteCalc.Defs
 import ReMath.DiscreteCalc.Lemmas
 import ReMath.DiscreteCalc.Theorems
+import ReMath.Function.Bijective
+import ReMath.Order.Zorn
+import ReMath.Set.Card
+import ReMath.Set.Equinum
