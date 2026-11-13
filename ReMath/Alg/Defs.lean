@@ -31,10 +31,8 @@ class AddGroup (M : Type _) extends AddMonoid M, Neg M, Sub M, ZSMul M where
   sub_eq_add_neg (a b : M) : a - b = a + -b
 
   zero_zsmul (a : M) : (0 : Int) • a = 0
-  succ_zsmul (z : Int) (a : M) :
-    (z + 1) • a = z • a + a
-  neg_zsmul (z : Int) (a : M) :
-    (-z) • a = -(z • a)
+  succ_zsmul (n : Nat) (a : M) : (n + 1 : Int) • a = n • a + a
+  neg_zsmul (z : Int) (a : M) : (-z) • a = -(z • a)
 
 export AddGroup (neg_add_cancel sub_eq_add_neg zero_zsmul succ_zsmul neg_zsmul)
 

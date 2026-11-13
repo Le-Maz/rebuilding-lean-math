@@ -65,6 +65,28 @@ theorem nsmul_add {M} [AddCommMonoid M] (n : Nat) (a b : M) :
 
 end AddCommMonoid
 
+section AddGroup
+
+theorem ofNat_zsmul {M : Type _} [AddGroup M]
+    (n : Nat) (a : M) :
+    (Int.ofNat n) • a = n • a := by
+  induction n with
+  | zero =>
+    change 0 • a = 0 • a
+    rw [zero_zsmul, zero_nsmul]
+  | succ n ih =>
+    rw [Int.ofNat_eq_natCast, Int.natCast_add, Int.natCast_one]
+    rw [succ_zsmul, succ_nsmul]
+
+theorem negSucc_zsmul {M : Type _} [AddGroup M]
+    (n : Nat) (a : M) :
+    (Int.negSucc n) • a = -((n + 1) • a) := by
+  change (-(↑(n + 1) : Int)) • a = -((n + 1) • a)
+  rw [neg_zsmul, Int.natCast_add, Int.natCast_one]
+  rw [succ_nsmul, succ_zsmul]
+
+end AddGroup
+
 section AddCommGroup
 
 instance {M} [AddCommGroup M] : Lean.Grind.AddCommGroup M where
@@ -131,6 +153,50 @@ theorem neg_neg {M} [AddCommGroup M] (a : M) : -(-a) = a := by
   symm
   apply neg_eq_of_add_eq_zero
   exact neg_add_cancel a
+
+theorem zsmul_add {M : Type _} [AddCommGroup M]
+    (z : Int) (a b : M) :
+    z • (a + b) = z • a + z • b := by
+  cases z with
+  | ofNat n =>
+    rw [ofNat_zsmul, ofNat_zsmul, ofNat_zsmul]
+    simp [nsmul_add]
+  | negSucc n =>
+    rw [negSucc_zsmul, negSucc_zsmul, negSucc_zsmul]
+    simp [nsmul_add, neg_add]
+    ac_rfl
+
+/-- Two differences are equal iff the corresponding “cross sums” are equal. -/
+theorem sub_eq_sub_iff {M} [AddCommGroup M] (a b c d : M) :
+    a - b = c - d ↔ a + d = b + c := by
+  constructor
+  · intro h
+    have h1 : a + -b = c + -d := by simpa only [sub_eq_add_neg] using h
+    have h2 : a + -b + b + d = c + -d + b + d := congrArg (fun x => x + b + d) h1
+    have h3 : a + -b + b + d = a + d + (-b + b) := by ac_rfl
+    have h4 : a + -b + b + d = a + d := by simp [h3, neg_add_cancel]
+    have h5 : c + -d + b + d = b + c + (-d + d) := by ac_rfl
+    have h6 : c + -d + b + d = b + c := by simp [h5, neg_add_cancel]
+    rw [h4, h6] at h2
+    exact h2
+  · intro h
+    have h1 : a + d + -b + -d = b + c + -b + -d := by rw [h]
+    have h2 : a + d + -b + -d = (a + -b) + (d + -d) := by ac_rfl
+    have h3 : a + d + -b + -d = a + -b := by simp [h2, add_neg_cancel]
+    have h4 : b + c + -b + -d = (c + -d) + (b + -b) := by ac_rfl
+    have h5 : b + c + -b + -d = c + -d := by simp [h4, add_neg_cancel]
+    rw [h3, h5] at h1
+    simpa only [sub_eq_add_neg] using h1
+
+/-- Convenient one-direction form (most useful for rewriting). -/
+theorem sub_eq_of_add_eq {M} [AddCommGroup M] {a b c d : M}
+    (h : a + d = b + c) : a - b = c - d :=
+  (sub_eq_sub_iff a b c d).2 h
+
+/-- The converse direction. -/
+theorem add_eq_of_sub_eq {M} [AddCommGroup M] {a b c d : M}
+    (h : a - b = c - d) : a + d = b + c :=
+  (sub_eq_sub_iff a b c d).1 h
 
 end AddCommGroup
 
@@ -253,7 +319,7 @@ theorem natCast_zsmul {M} [AddGroup M] (n : Nat) (a : M) :
   | zero =>
     simp [zero_zsmul, zero_nsmul]
   | succ n ih =>
-    rw [Int.natCast_succ, succ_zsmul, ih, succ_nsmul]
+    rw [Int.natCast_succ, succ_zsmul, succ_nsmul]
 
 instance {M} [Ring M] : Lean.Grind.Ring M where
   neg_add_cancel := neg_add_cancel

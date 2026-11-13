@@ -191,6 +191,7 @@ instance (n : Nat) [NeZero n] : Alg.CommRing (Fin n) where
   succ_zsmul z a := by
     change ((z + 1 : Int) : Fin n) * a = (z : Fin n) * a + a
     rw [fin_intCast_add_one, fin_add_mul, Fin.one_mul]
+    rfl
   mul_comm := Fin.mul_comm
   neg_zsmul i a := by
     change (((-i) : Int) : Fin n) * a = -((i : Fin n) * a)
@@ -263,7 +264,7 @@ instance : Alg.Field Rat where
     change (z + 1 : Int) * a = z * a + a
     rw [Rat.intCast_add, Rat.add_mul]
     change _ + 1 * a = _
-    rw [Rat.one_mul]
+    rw [Rat.one_mul, Rat.intCast_natCast]
   neg_zsmul z a := Rat.neg_mul (↑z) a
   intCast_ofNat _ := rfl
   intCast_neg _ := rfl
