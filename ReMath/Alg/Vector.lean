@@ -213,7 +213,7 @@ instance {α} [AddCommMonoid α] {n : Nat} :
     simp only [Fin.getElem_fin, getElem_add]
     exact add_comm _ _
 
-instance {α} [AddGroup α] {n : Nat} :
+instance {α} [inst : AddGroup α] {n : Nat} :
     AddGroup (Vector α n) where
   neg_add_cancel a := ext_fin fun i => by
     simp only [Fin.getElem_fin, getElem_add, getElem_neg, getElem_zero]
@@ -225,7 +225,7 @@ instance {α} [AddGroup α] {n : Nat} :
     simp only [Fin.getElem_fin, getElem_zsmul, getElem_zero]
     exact zero_zsmul _
   succ_zsmul k a := ext_fin fun i => by
-    simp only [Fin.getElem_fin, getElem_zsmul, getElem_add]
+    simp only [Fin.getElem_fin, getElem_zsmul, getElem_nsmul, getElem_add]
     exact succ_zsmul _ _
   neg_zsmul k a := ext_fin fun i => by
     simp only [Fin.getElem_fin, getElem_zsmul, getElem_neg]
