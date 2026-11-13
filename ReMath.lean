@@ -7,7 +7,7 @@ import ReMath.Alg.Vector
 import ReMath.DiscreteCalc.Defs
 import ReMath.DiscreteCalc.Lemmas
 import ReMath.DiscreteCalc.Theorems
-import ReMath.Function.Bijective
+import ReMath.Function.Basic
 import ReMath.Order.Zorn
 import ReMath.Set.Cardinality
 import ReMath.Set.Equinum
