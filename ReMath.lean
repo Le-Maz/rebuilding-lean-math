@@ -9,5 +9,5 @@ import ReMath.DiscreteCalc.Lemmas
 import ReMath.DiscreteCalc.Theorems
 import ReMath.Function.Bijective
 import ReMath.Order.Zorn
-import ReMath.Set.Card
+import ReMath.Set.Cardinality
 import ReMath.Set.Equinum
