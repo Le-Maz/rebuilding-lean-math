@@ -1,4 +1,4 @@
-import ReMath.Function.Bijective
+import ReMath.Function.Basic
 
 /-- Two types are equinumerous when there is a bijection between them. -/
 class Equinum (α β : Sort _) : Prop where
