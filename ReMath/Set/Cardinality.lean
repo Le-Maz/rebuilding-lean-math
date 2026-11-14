@@ -85,7 +85,7 @@ theorem mk_lt_mk_iff {α β : Sort _} : mk α < mk β ↔ StrictSubnum α β := 
 theorem lt_iff_le_not_ge (x y : Cardinality) : x < y ↔ x ≤ y ∧ ¬ y ≤ x :=
   Quotient.inductionOn₂ x y fun α β =>
     show StrictSubnum α β ↔ Subnum α β ∧ ¬ Subnum β α from
-      ⟨fun h => ⟨h.fw, h.bw⟩, fun h => ⟨h.1, h.2⟩⟩
+      ⟨fun h => ⟨h.subnum, h.not_subnum⟩, fun h => ⟨h.1, h.2⟩⟩
 
 /-- `<` on cardinalities is irreflexive. -/
 theorem lt_irrefl (x : Cardinality) : ¬ x < x :=

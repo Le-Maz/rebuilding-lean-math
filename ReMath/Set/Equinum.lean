@@ -1,14 +1,14 @@
 import ReMath.Function.Basic
 
 /-- Two types are equinumerous when there is a bijection between them. -/
-class Equinum (α β : Sort _) : Prop where
+structure Equinum (α β : Sort _) : Prop where
   exists_bij : ∃ f : α → β, Function.Bijective f
 
 namespace Equinum
 
 /-- Every type is equinumerous to itself, via the identity. -/
 @[refl]
-instance refl (α : Sort _) : Equinum α α := by
+theorem refl (α : Sort _) : Equinum α α := by
   refine ⟨fun x => x, ?_, ?_⟩
   · intro x y hxy
     exact hxy
@@ -94,16 +94,16 @@ theorem of_isEmpty {α β : Sort _} (hα : α → False) (hβ : β → False) : 
   ⟨fun a => (hα a).elim, fun a => (hα a).elim, fun b => (hβ b).elim⟩
 
 /-- `PEmpty` is equinumerous to `Fin 0`, as both are empty. -/
-instance instPEmptyFin : Equinum PEmpty (Fin 0) :=
+theorem pempty_to_fin : Equinum PEmpty (Fin 0) :=
   of_isEmpty (fun e => e.elim) (fun y => Nat.not_lt_zero _ y.isLt)
 
 /-- `PUnit` is equinumerous to `Fin 1`, as both have exactly one element. -/
-instance instPUnitFin : Equinum PUnit (Fin 1) :=
+theorem punit_to_fin : Equinum PUnit (Fin 1) :=
   of_lr_inverses (fun _ => 0) (fun _ => PUnit.unit)
     (fun _ => rfl) (fun _ => Subsingleton.elim _ _)
 
 /-- `Prop` is equinumerous to `Bool`, via `propext` and classical decidability. -/
-instance instPropBool : Equinum Prop Bool := by
+theorem prop_to_bool : Equinum Prop Bool := by
   classical
   refine ⟨fun p => decide p, ?_, ?_⟩
   · intro p q h
@@ -114,7 +114,7 @@ instance instPropBool : Equinum Prop Bool := by
     · exact ⟨True, decide_true _⟩
 
 /-- `Bool` is equinumerous to `Fin 2`, sending `false` to `0` and `true` to `1`. -/
-instance instBoolFin : Equinum Bool (Fin 2) :=
+theorem bool_to_fin : Equinum Bool (Fin 2) :=
   of_lr_inverses (fun b => cond b 1 0) (fun y => decide (y = 1))
     (fun b => by cases b <;> decide)
     (fun y => by
@@ -123,6 +123,6 @@ instance instBoolFin : Equinum Bool (Fin 2) :=
       | 1 => decide)
 
 /-- `Prop` is equinumerous to `Fin 2`, by composing `Prop ≃ Bool` and `Bool ≃ Fin 2`. -/
-instance instPropFin : Equinum Prop (Fin 2) := trans instPropBool instBoolFin
+theorem prop_to_fin : Equinum Prop (Fin 2) := trans prop_to_bool bool_to_fin
 
 end Equinum

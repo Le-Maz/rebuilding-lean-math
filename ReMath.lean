@@ -8,6 +8,9 @@ import ReMath.DiscreteCalc.Defs
 import ReMath.DiscreteCalc.Lemmas
 import ReMath.DiscreteCalc.Theorems
 import ReMath.Function.Basic
+import ReMath.Function.Pidgeonhole
 import ReMath.Order.Zorn
 import ReMath.Set.Cardinality
 import ReMath.Set.Equinum
+import ReMath.Set.Subnum
+import ReMath.Set.StrictSubnum

@@ -1,7 +1,3 @@
-import ReMath.Function.Basic
-import ReMath.Set.Equinum
-import ReMath.Set.Subnum
-
 namespace Pigeonhole
 
 /-- Swaps the values `a` and `b` and fixes every other natural number. -/
@@ -65,39 +61,3 @@ theorem le_of_injective_fin {n m : Nat} {f : Fin n → Fin m}
     exact congrArg Fin.val (hf (Fin.ext h))
 
 end Pigeonhole
-
-namespace Subnum
-
-/-- If `Fin n` is subnumerous to `Fin m`, then `n ≤ m`. -/
-theorem fin_le {n m : Nat} (h : Subnum (Fin n) (Fin m)) : n ≤ m := by
-  obtain ⟨f, hf⟩ := h.exists_inj
-  exact Pigeonhole.le_of_injective_fin hf
-
-/-- `Fin n` is subnumerous to `Fin m` exactly when `n ≤ m`. -/
-theorem fin_iff {n m : Nat} : Subnum (Fin n) (Fin m) ↔ n ≤ m :=
-  ⟨fin_le, fun h =>
-    ⟨fun a => ⟨a.val, Nat.lt_of_lt_of_le a.isLt h⟩,
-      fun a b hab => by
-        apply Fin.ext
-        simp at hab
-        exact hab⟩⟩
-
-/-- Pigeonhole principle: `Fin n` does not inject into a strictly smaller `Fin m`. -/
-theorem not_fin_of_lt {n m : Nat} (h : m < n) : ¬ Subnum (Fin n) (Fin m) :=
-  fun hs => Nat.not_le.mpr h (fin_le hs)
-
-end Subnum
-
-namespace Equinum
-
-/-- Equinumerous finite ordinals have the same size. -/
-theorem eq_of_fin {n m : Nat} (h : Equinum (Fin n) (Fin m)) : n = m :=
-  Nat.le_antisymm
-    (Subnum.fin_le (Subnum.of_equinum h))
-    (Subnum.fin_le (Subnum.of_equinum h.symm))
-
-/-- `Fin n` and `Fin m` are equinumerous exactly when `n = m`. -/
-theorem fin_iff {n m : Nat} : Equinum (Fin n) (Fin m) ↔ n = m :=
-  ⟨eq_of_fin, fun h => by subst h; exact Equinum.refl _⟩
-
-end Equinum
