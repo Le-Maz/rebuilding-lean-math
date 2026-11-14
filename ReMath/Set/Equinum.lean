@@ -8,7 +8,7 @@ namespace Equinum
 
 /-- Every type is equinumerous to itself, via the identity. -/
 @[refl]
-theorem refl (α : Sort _) : Equinum α α := by
+instance refl (α : Sort _) : Equinum α α := by
   refine ⟨fun x => x, ?_, ?_⟩
   · intro x y hxy
     exact hxy
@@ -81,5 +81,48 @@ theorem of_injective {α β : Sort _} {f : α → β} {g : β → α}
         | base _ h => exact h b rfl
         | step a' _ ha' heq => exact hex ⟨a', ha', hg heq⟩
       exact ⟨g b, (dif_neg hn).trans (hg (Classical.choose_spec (range_of (g b) hn)))⟩
+
+/-- Two maps that are mutual two-sided inverses witness an equinumerosity. -/
+theorem of_lr_inverses {α β : Sort _} (f : α → β) (g : β → α)
+    (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) : Equinum α β :=
+  ⟨f,
+    fun a₁ a₂ h => (hgf a₁).symm.trans ((congrArg g h).trans (hgf a₂)),
+    fun b => ⟨g b, hfg b⟩⟩
+
+/-- Any two empty types are equinumerous. -/
+theorem of_isEmpty {α β : Sort _} (hα : α → False) (hβ : β → False) : Equinum α β :=
+  ⟨fun a => (hα a).elim, fun a => (hα a).elim, fun b => (hβ b).elim⟩
+
+/-- `PEmpty` is equinumerous to `Fin 0`, as both are empty. -/
+instance instPEmptyFin : Equinum PEmpty (Fin 0) :=
+  of_isEmpty (fun e => e.elim) (fun y => Nat.not_lt_zero _ y.isLt)
+
+/-- `PUnit` is equinumerous to `Fin 1`, as both have exactly one element. -/
+instance instPUnitFin : Equinum PUnit (Fin 1) :=
+  of_lr_inverses (fun _ => 0) (fun _ => PUnit.unit)
+    (fun _ => rfl) (fun _ => Subsingleton.elim _ _)
+
+/-- `Prop` is equinumerous to `Bool`, via `propext` and classical decidability. -/
+instance instPropBool : Equinum Prop Bool := by
+  classical
+  refine ⟨fun p => decide p, ?_, ?_⟩
+  · intro p q h
+    exact propext (decide_eq_decide.mp h)
+  · intro b
+    cases b
+    · exact ⟨False, decide_false _⟩
+    · exact ⟨True, decide_true _⟩
+
+/-- `Bool` is equinumerous to `Fin 2`, sending `false` to `0` and `true` to `1`. -/
+instance instBoolFin : Equinum Bool (Fin 2) :=
+  of_lr_inverses (fun b => cond b 1 0) (fun y => decide (y = 1))
+    (fun b => by cases b <;> decide)
+    (fun y => by
+      match y with
+      | 0 => decide
+      | 1 => decide)
+
+/-- `Prop` is equinumerous to `Fin 2`, by composing `Prop ≃ Bool` and `Bool ≃ Fin 2`. -/
+instance instPropFin : Equinum Prop (Fin 2) := trans instPropBool instBoolFin
 
 end Equinum
