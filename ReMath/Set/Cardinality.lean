@@ -1,5 +1,6 @@
 import ReMath.Set.Equinum
 import ReMath.Set.Subnum
+import ReMath.Set.StrictSubnum
 
 /-- The class of type cardinalities -/
 def Cardinality.{u} : Type u := Quotient Equinum.setoid.{u}
@@ -36,11 +37,19 @@ theorem le_trans (x y z : Cardinality) : x ≤ y → y ≤ z → x ≤ z :=
   Quotient.inductionOn₃ x y z fun α β γ =>
     show Subnum α β → Subnum β γ → Subnum α γ from Subnum.trans
 
+/-- Enables `calc` chains of the form `x ≤ y`, `y ≤ z`. -/
+instance instTransLe : Trans (· ≤ · : Cardinality → Cardinality → Prop) (· ≤ ·) (· ≤ ·) :=
+  ⟨le_trans _ _ _⟩
+
 /-- `≤` on cardinalities is antisymmetric; this is Schröder-Bernstein. -/
 theorem le_antisymm (x y : Cardinality) : x ≤ y → y ≤ x → x = y :=
   Quotient.inductionOn₂ x y fun α β =>
     show Subnum α β → Subnum β α → mk α = mk β from
       fun h₁ h₂ => Quotient.sound (Subnum.antisymm h₁ h₂)
+
+/-- `≤` on cardinalities is antisymmetric, as an instance of `Std.Antisymm`. -/
+instance instAntisymmLe : Std.Antisymm (· ≤ · : Cardinality → Cardinality → Prop) :=
+  ⟨le_antisymm⟩
 
 /-- Any two cardinalities are comparable. -/
 theorem le_total (x y : Cardinality) : x ≤ y ∨ y ≤ x :=
@@ -59,6 +68,103 @@ instance instIsPartialOrder : Std.IsPartialOrder Cardinality where
 /-- `≤` on cardinalities is a linear order. -/
 instance instIsLinearOrder : Std.IsLinearOrder Cardinality where
   le_total := le_total
+
+/-- `x < y` for cardinalities: some representative of `x` is strictly subnumerous to one of `y`. -/
+def lt (a b : Cardinality) : Prop :=
+  a.liftOn₂ b StrictSubnum <| by
+    intro α₁ β₁ α₂ β₂ hα hβ
+    exact propext (StrictSubnum.congr hα hβ)
+
+/-- Enables the `<` notation on cardinalities. -/
+instance instLT : LT Cardinality := ⟨lt⟩
+
+/-- For types `α` and `β`, `mk α < mk β` iff `α` is strictly subnumerous to `β`. -/
+theorem mk_lt_mk_iff {α β : Sort _} : mk α < mk β ↔ StrictSubnum α β := Iff.rfl
+
+/-- `x < y` iff `x ≤ y` and not `y ≤ x`. -/
+theorem lt_iff_le_not_ge (x y : Cardinality) : x < y ↔ x ≤ y ∧ ¬ y ≤ x :=
+  Quotient.inductionOn₂ x y fun α β =>
+    show StrictSubnum α β ↔ Subnum α β ∧ ¬ Subnum β α from
+      ⟨fun h => ⟨h.fw, h.bw⟩, fun h => ⟨h.1, h.2⟩⟩
+
+/-- `<` on cardinalities is irreflexive. -/
+theorem lt_irrefl (x : Cardinality) : ¬ x < x :=
+  Quotient.inductionOn x fun α => show ¬ StrictSubnum α α from StrictSubnum.irrefl α
+
+/-- `<` on cardinalities is transitive. -/
+theorem lt_trans (x y z : Cardinality) : x < y → y < z → x < z :=
+  Quotient.inductionOn₃ x y z fun α β γ =>
+    show StrictSubnum α β → StrictSubnum β γ → StrictSubnum α γ from StrictSubnum.trans
+
+/-- `<` on cardinalities is asymmetric. -/
+theorem lt_asymm (x y : Cardinality) : x < y → ¬ y < x :=
+  fun h h' => lt_irrefl x (lt_trans x y x h h')
+
+/-- A strict inequality implies the non-strict one. -/
+theorem le_of_lt {x y : Cardinality} (h : x < y) : x ≤ y :=
+  ((lt_iff_le_not_ge x y).mp h).1
+
+/-- A strict inequality rules out the reverse non-strict one. -/
+theorem not_le_of_lt {x y : Cardinality} (h : x < y) : ¬ y ≤ x :=
+  ((lt_iff_le_not_ge x y).mp h).2
+
+/-- `x < y` and `y ≤ z` give `x < z`. -/
+theorem lt_of_lt_of_le {x y z : Cardinality} (h₁ : x < y) (h₂ : y ≤ z) : x < z :=
+  (lt_iff_le_not_ge x z).mpr
+    ⟨le_trans x y z (le_of_lt h₁) h₂, fun h => not_le_of_lt h₁ (le_trans y z x h₂ h)⟩
+
+/-- `x ≤ y` and `y < z` give `x < z`. -/
+theorem lt_of_le_of_lt {x y z : Cardinality} (h₁ : x ≤ y) (h₂ : y < z) : x < z :=
+  (lt_iff_le_not_ge x z).mpr
+    ⟨le_trans x y z h₁ (le_of_lt h₂), fun h => not_le_of_lt h₂ (le_trans z x y h h₁)⟩
+
+/-- Enables `calc` chains of the form `x < y`, `y < z`. -/
+instance instTransLtLt : Trans (· < · : Cardinality → Cardinality → Prop) (· < ·) (· < ·) :=
+  ⟨fun h₁ h₂ => lt_trans _ _ _ h₁ h₂⟩
+
+/-- Enables `calc` chains of the form `x < y`, `y ≤ z`. -/
+instance instTransLtLe : Trans (· < · : Cardinality → Cardinality → Prop) (· ≤ ·) (· < ·) :=
+  ⟨lt_of_lt_of_le⟩
+
+/-- Enables `calc` chains of the form `x ≤ y`, `y < z`. -/
+instance instTransLeLt : Trans (· ≤ · : Cardinality → Cardinality → Prop) (· < ·) (· < ·) :=
+  ⟨lt_of_le_of_lt⟩
+
+/-- `x < y` iff `x ≤ y` and `x ≠ y`. -/
+theorem lt_iff_le_and_ne (x y : Cardinality) : x < y ↔ x ≤ y ∧ x ≠ y :=
+  ⟨fun h => ⟨le_of_lt h, fun e => lt_irrefl y (e ▸ h)⟩,
+   fun ⟨h₁, h₂⟩ => (lt_iff_le_not_ge x y).mpr
+     ⟨h₁, fun h => h₂ (le_antisymm x y h₁ h)⟩⟩
+
+/-- A strict inequality implies the cardinalities are distinct. -/
+theorem ne_of_lt {x y : Cardinality} (h : x < y) : x ≠ y :=
+  ((lt_iff_le_and_ne x y).mp h).2
+
+/-- Trichotomy: any two cardinalities satisfy exactly one of `<`, `=`, `>`. -/
+theorem lt_trichotomy (x y : Cardinality) : x < y ∨ x = y ∨ y < x :=
+  Quotient.inductionOn₂ x y fun α β => by
+    rcases StrictSubnum.trichotomy α β with h | h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl (Quotient.sound h))
+    · exact Or.inr (Or.inr h)
+
+/-- `x ≤ y` iff `x < y` or `x = y`. -/
+theorem le_iff_lt_or_eq (x y : Cardinality) : x ≤ y ↔ x < y ∨ x = y :=
+  ⟨fun h => (lt_trichotomy x y).elim Or.inl fun h' =>
+      h'.elim Or.inr fun h'' => absurd h (not_le_of_lt h''),
+   fun h => h.elim le_of_lt fun e => e ▸ le_refl x⟩
+
+/-- `¬ x < y` iff `y ≤ x`. -/
+theorem not_lt (x y : Cardinality) : ¬ x < y ↔ y ≤ x :=
+  ⟨fun h => (le_total x y).elim
+      (fun h' => (le_iff_lt_or_eq x y).mp h' |>.elim (fun l => absurd l h)
+        fun e => e ▸ le_refl x)
+      id,
+   fun h l => not_le_of_lt l h⟩
+
+/-- `<` on cardinalities is determined by `≤`. -/
+instance instLawfulOrderLT : Std.LawfulOrderLT Cardinality where
+  lt_iff := lt_iff_le_not_ge
 
 /-- The cardinality `0`, represented by the empty type. -/
 instance instZero : Zero Cardinality where
