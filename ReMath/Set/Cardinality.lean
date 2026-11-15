@@ -3,12 +3,12 @@ import ReMath.Set.Subnum
 import ReMath.Set.StrictSubnum
 
 /-- The class of type cardinalities -/
-def Cardinality.{u} : Type u := Quotient Equinum.setoid.{u}
+def Cardinality.{u} : Type u := Quotient Equinum.instSetoid.{u}
 
 namespace Cardinality
 
 /-- The cardinality of a type, as its equinumerosity class. -/
-def mk.{u} : Sort u → Cardinality.{u} := Quotient.mk Equinum.setoid
+def mk.{u} : Sort u → Cardinality.{u} := Quotient.mk Equinum.instSetoid
 
 /-- `x ≤ y` for cardinalities: some representative of `x` is subnumerous to one of `y`. -/
 def le (a b : Cardinality) : Prop :=

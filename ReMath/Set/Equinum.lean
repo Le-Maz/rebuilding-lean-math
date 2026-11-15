@@ -40,7 +40,7 @@ theorem iseqv.{u} : Equivalence Equinum.{u, u} where
   trans := trans
 
 /-- The setoid on types whose relation is equinumerosity. -/
-instance setoid.{u} : Setoid (Sort u) := ⟨Equinum, iseqv⟩
+instance instSetoid.{u} : Setoid (Sort u) := ⟨Equinum, iseqv⟩
 
 /-- Elements of `α` reachable from those outside the range of `g` by iterating `g ∘ f`. -/
 inductive Bad {α β : Sort _} (f : α → β) (g : β → α) : α → Prop
