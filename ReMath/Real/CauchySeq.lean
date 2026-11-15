@@ -173,4 +173,101 @@ instance instMul : Mul CauchySeq where
     rw [Rat.mul_sub_split]
     exact Std.lt_of_le_of_lt (Rat.abs_triangle _ _) s
 
+@[simp] theorem zero_run (n : Nat) : (0 : CauchySeq).run n = 0 := rfl
+
+/-- A nonzero rational has a reciprocal that cancels it on the left. -/
+theorem rat_inv_mul_self {a : Rat} (h : a ≠ 0) : a⁻¹ * a = 1 := by
+  rw [Rat.mul_comm]
+  exact Rat.mul_inv_cancel a h
+
+/-- A rational whose absolute value exceeds a positive bound is nonzero. -/
+theorem ne_zero_of_lt_abs {δ a : Rat} (hδ : 0 < δ) (h : δ < Rat.abs a) : a ≠ 0 :=
+  Rat.ne_zero_of_abs_pos (Std.lt_trans hδ h)
+
+/-- The difference of reciprocals, scaled by the product of the originals. -/
+theorem inv_sub_inv_mul {a b : Rat} (ha : a ≠ 0) (hb : b ≠ 0) :
+    (a⁻¹ - b⁻¹) * (a * b) = b - a := by
+  rw [Rat.sub_mul, Rat.inv_mul_cancel_left ha, Rat.inv_mul_mul_cancel hb]
+
+/-- A Cauchy sequence that is not equivalent to zero is eventually bounded away from zero. -/
+theorem exists_bound_of_not_equiv_zero {x : CauchySeq} (h : ¬ Equiv x 0) :
+    ∃ δ : Rat, 0 < δ ∧ ∃ N : Nat, ∀ n, N < n → δ < Rat.abs (x.run n) := by
+  refine Classical.byContradiction fun hc => ?_
+  apply h
+  intro ε hε
+  have hε2 : 0 < ε / 2 := Rat.half_pos hε
+  obtain ⟨N0, hN0⟩ := x.cauchy (ε / 2) hε2
+  have hfreq : ∃ n, N0 < n ∧ Rat.abs (x.run n) ≤ ε / 2 := by
+    refine Classical.byContradiction fun hno => ?_
+    apply hc
+    refine ⟨ε / 2, hε2, N0, fun n hn => ?_⟩
+    refine Classical.byContradiction fun hle => ?_
+    exact hno ⟨n, hn, Std.not_lt.mp hle⟩
+  obtain ⟨n, hn, hxn⟩ := hfreq
+  refine ⟨N0, fun {m} hm => ?_⟩
+  show Rat.abs (x.run m - 0) < ε
+  rw [Rat.sub_eq_add_neg, Rat.neg_zero, Rat.add_zero]
+  have hd := hN0 hm hn
+  have tri := Rat.abs_triangle (x.run m - x.run n) (x.run n)
+  rw [Rat.sub_add_cancel] at tri
+  have s : Rat.abs (x.run m - x.run n) + Rat.abs (x.run n) < ε / 2 + ε / 2 :=
+    Std.lt_of_le_of_lt (Rat.add_le_add_left.mpr hxn) (Rat.add_lt_add_right.mpr hd)
+  rw [Rat.add_halves] at s
+  exact Std.lt_of_le_of_lt tri s
+
+theorem inv_cauchy {x : CauchySeq} (h : ¬ Equiv x 0) :
+    ∀ ε : Rat, 0 < ε → ∃ N : Nat,
+      ∀ {m n : Nat}, N < m → N < n →
+      Rat.abs ((x.run m)⁻¹ - (x.run n)⁻¹) < ε := by
+  intro ε hε
+  obtain ⟨δ, hδ, N0, hN0⟩ := exists_bound_of_not_equiv_zero h
+  obtain ⟨N1, hN1⟩ := x.cauchy (ε * (δ * δ)) (Rat.mul_pos hε (Rat.mul_pos hδ hδ))
+  refine ⟨max N0 N1, ?_⟩
+  intro m n hm hn
+  rw [Nat.max_lt] at hm hn
+  exact Rat.inv_sub_inv_lt hδ hδ hε (hN0 m hm.left) (hN0 n hn.left) (hN1 hn.right hm.right)
+
+open Classical in
+/--
+The inverse of a Cauchy sequence. Sequences equivalent to zero have no
+inverse, so they are sent to zero.
+-/
+noncomputable instance instInv : Inv CauchySeq where
+  inv x :=
+    if h : Equiv x 0 then 0
+    else mk (fun n => (x.run n)⁻¹) (inv_cauchy h)
+
+open Classical in
+theorem inv_run_of_not_equiv {x : CauchySeq} (h : ¬ Equiv x 0) (n : Nat) :
+    (x⁻¹).run n = (x.run n)⁻¹ := by
+  show (if h : Equiv x 0 then (0 : CauchySeq)
+    else mk (fun n => (x.run n)⁻¹) (inv_cauchy h)).run n = _
+  rw [dif_neg h]
+
+open Classical in
+theorem inv_run_of_equiv {x : CauchySeq} (h : Equiv x 0) (n : Nat) :
+    (x⁻¹).run n = 0 := by
+  show (if h : Equiv x 0 then (0 : CauchySeq)
+    else mk (fun n => (x.run n)⁻¹) (inv_cauchy h)).run n = _
+  rw [dif_pos h]
+  rfl
+
+/-- Inversion respects equivalence of Cauchy sequences. -/
+theorem inv_equiv {a b : CauchySeq} (h : Equiv a b) : Equiv a⁻¹ b⁻¹ := by
+  by_cases ha : Equiv a 0
+  · have hb : Equiv b 0 := equiv_trans (equiv_symm h) ha
+    intro ε hε
+    refine ⟨0, fun {n} _ => ?_⟩
+    rw [inv_run_of_equiv ha, inv_run_of_equiv hb, Rat.sub_self, Rat.abs_zero]
+    exact hε
+  · have hb : ¬ Equiv b 0 := fun hb => ha (equiv_trans h hb)
+    obtain ⟨δa, hδa, Na, hNa⟩ := exists_bound_of_not_equiv_zero ha
+    obtain ⟨δb, hδb, Nb, hNb⟩ := exists_bound_of_not_equiv_zero hb
+    intro ε hε
+    obtain ⟨N, hN⟩ := (equiv_symm h) (ε * (δa * δb)) (Rat.mul_pos hε (Rat.mul_pos hδa hδb))
+    refine ⟨max N (max Na Nb), fun {n} hn => ?_⟩
+    rw [Nat.max_lt, Nat.max_lt] at hn
+    rw [inv_run_of_not_equiv ha, inv_run_of_not_equiv hb]
+    exact Rat.inv_sub_inv_lt hδa hδb hε (hNa n hn.2.1) (hNb n hn.2.2) (hN hn.1)
+
 end CauchySeq

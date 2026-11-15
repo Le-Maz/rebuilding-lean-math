@@ -62,13 +62,40 @@ theorem mul_lt_mul {a b c d : Rat} (hab : a < b) (hcd : c < d)
   have h2 : a * d < b * d := Rat.mul_lt_mul_of_pos_right hab hd
   exact Std.lt_of_le_of_lt h1 h2
 
+/-- A positive rational is nonzero. -/
+theorem ne_zero_of_pos {a : Rat} (h : 0 < a) : a ≠ 0 := by
+  intro h0
+  rw [h0] at h
+  exact Rat.lt_irrefl h
+
+/-- A rational with positive absolute value is nonzero. -/
+theorem ne_zero_of_abs_pos {a : Rat} (h : 0 < Rat.abs a) : a ≠ 0 := by
+  intro h0
+  rw [h0, Rat.abs_zero] at h
+  exact Rat.lt_irrefl h
+
+/-- A nonzero rational is cancelled by its reciprocal on the left. -/
+theorem inv_mul_self {a : Rat} (h : a ≠ 0) : a⁻¹ * a = 1 := by
+  rw [Rat.mul_comm]
+  exact Rat.mul_inv_cancel a h
+
+/-- Cancelling a nonzero factor from the left of a product. -/
+theorem inv_mul_cancel_left {a : Rat} (ha : a ≠ 0) (b : Rat) : a⁻¹ * (a * b) = b := by
+  rw [← Rat.mul_assoc, inv_mul_self ha, Rat.one_mul]
+
+/-- Cancelling a nonzero factor from the right of a product, on the left. -/
+theorem inv_mul_mul_cancel {b : Rat} (hb : b ≠ 0) (a : Rat) : b⁻¹ * (a * b) = a := by
+  rw [Rat.mul_comm a b]
+  exact inv_mul_cancel_left hb a
+
+/-- Multiplication distributes over subtraction on the right. -/
+theorem sub_mul (a b c : Rat) : (a - b) * c = a * c - b * c := by
+  rw [Rat.sub_eq_add_neg a b, Rat.sub_eq_add_neg (a * c) (b * c), Rat.add_mul, Rat.neg_mul]
+
 /-- Multiplying by a positive rational and dividing by it cancels. -/
 theorem mul_div_cancel_pos {B : Rat} (ε : Rat) (hB : 0 < B) : B * (ε / B) = ε := by
-  have hne : B ≠ 0 := by
-    intro h
-    rw [h] at hB
-    exact Rat.lt_irrefl hB
-  rw [Rat.div_def, Rat.mul_comm ε B⁻¹, ← Rat.mul_assoc, Rat.mul_inv_cancel B hne, Rat.one_mul]
+  rw [Rat.div_def, Rat.mul_comm ε B⁻¹, ← Rat.mul_assoc,
+    Rat.mul_inv_cancel B (ne_zero_of_pos hB), Rat.one_mul]
 
 /-- A product of rationals is zero only if a factor is zero. -/
 theorem mul_ne_zero' {a b : Rat} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
@@ -137,5 +164,32 @@ theorem mul_sub_split (a b c d : Rat) :
   simp only [Rat.mul_comm a (-d), Rat.neg_mul]
   rw [← Rat.add_assoc, Rat.add_assoc _ _ (d * a)]
   simp only [Rat.neg_add_cancel, Rat.add_zero]
+
+/-- The difference of reciprocals, scaled by the product of the originals. -/
+theorem inv_sub_inv_mul {a b : Rat} (ha : a ≠ 0) (hb : b ≠ 0) :
+    (a⁻¹ - b⁻¹) * (a * b) = b - a := by
+  rw [sub_mul, inv_mul_cancel_left ha, inv_mul_mul_cancel hb]
+
+/-- Reciprocals of rationals bounded away from zero are close when the rationals are. -/
+theorem inv_sub_inv_lt {δ₁ δ₂ ε a b : Rat} (hδ₁ : 0 < δ₁) (hδ₂ : 0 < δ₂) (hε : 0 < ε)
+    (ha : δ₁ < Rat.abs a) (hb : δ₂ < Rat.abs b)
+    (h : Rat.abs (b - a) < ε * (δ₁ * δ₂)) : Rat.abs (a⁻¹ - b⁻¹) < ε := by
+  have hpa : 0 < Rat.abs a := Std.lt_trans hδ₁ ha
+  have hpb : 0 < Rat.abs b := Std.lt_trans hδ₂ hb
+  have hP : 0 < Rat.abs a * Rat.abs b := Rat.mul_pos hpa hpb
+  have hprod : δ₁ * δ₂ < Rat.abs a * Rat.abs b :=
+    Rat.mul_lt_mul ha hb (Rat.le_of_lt hδ₁) (Rat.le_of_lt hδ₂)
+  have hid : Rat.abs (a⁻¹ - b⁻¹) * (Rat.abs a * Rat.abs b) = Rat.abs (b - a) := by
+    have e := congrArg Rat.abs (inv_sub_inv_mul (ne_zero_of_abs_pos hpa) (ne_zero_of_abs_pos hpb))
+    rwa [abs_mul, abs_mul] at e
+  have hle : ε * (δ₁ * δ₂) ≤ ε * (Rat.abs a * Rat.abs b) :=
+    Rat.mul_le_mul_of_nonneg_left (Rat.le_of_lt hprod) (Rat.le_of_lt hε)
+  have hlt : Rat.abs (a⁻¹ - b⁻¹) * (Rat.abs a * Rat.abs b) <
+      ε * (Rat.abs a * Rat.abs b) := by
+    rw [hid]
+    exact Std.lt_of_lt_of_le h hle
+  refine Classical.byContradiction fun hge => ?_
+  have hmul := Rat.mul_le_mul_of_nonneg_right (Rat.not_lt.mp hge) (Rat.le_of_lt hP)
+  exact Std.lt_irrefl (Std.lt_of_lt_of_le hlt hmul)
 
 end Rat

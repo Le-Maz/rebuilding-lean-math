@@ -76,4 +76,15 @@ instance instMul : Mul Real where
 instance instSub : Sub Real where
   sub a b := a + -b
 
+/-- Inversion of reals. The inverse of zero is zero. -/
+noncomputable instance instInv : Inv Real where
+  inv x := x.liftOn (mk <| ·⁻¹) <| by
+    intro a b h
+    apply Quotient.sound
+    exact CauchySeq.inv_equiv h
+
+/-- Division of reals, defined as multiplication by the inverse. -/
+noncomputable instance instDiv : Div Real where
+  div x y := x * y⁻¹
+
 end Real
