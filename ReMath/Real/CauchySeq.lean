@@ -57,40 +57,6 @@ instance instSetoid : Setoid CauchySeq where
 
 instance : Trans (· ≤ · : Rat → Rat → Prop) (· < ·) (· < ·) := ⟨Std.lt_of_le_of_lt⟩
 
-instance instZero : Zero CauchySeq where
-  zero := mk (fun _ => 0) <| by
-    intro ε hε
-    refine ⟨0, ?_⟩
-    intro m n hm hn
-    rw [Rat.sub_self, Rat.abs_zero]
-    exact hε
-
-instance instAdd : Add CauchySeq where
-  add x y := mk (fun n => x.run n + y.run n) <| by
-    intro ε hε
-    let ⟨Nx, hx⟩ := x.cauchy (ε / 2) (Rat.half_pos hε)
-    let ⟨Ny, hy⟩ := y.cauchy (ε / 2) (Rat.half_pos hε)
-    refine ⟨max Nx Ny, ?_⟩
-    intro m n hm hn
-    rw [Nat.max_lt] at hm hn
-    have hx' := hx hm.left hn.left
-    have hy' := hy hm.right hn.right
-    calc (x.run m + y.run m - (x.run n + y.run n)).abs
-      _ = (x.run m + y.run m + (-x.run n + -y.run n)).abs := by simp only [Rat.sub_eq_add_neg, Rat.neg_add]
-      _ = ((x.run m + -x.run n) + (y.run m + -y.run n)).abs := by ac_rfl
-      _ = ((x.run m - x.run n) + (y.run m - y.run n)).abs := by simp only [Rat.sub_eq_add_neg]
-      _ ≤ (x.run m - x.run n).abs + (y.run m - y.run n).abs := Rat.abs_triangle _ _
-      _ < ε := Rat.add_halves ε ▸ Rat.add_lt_add hx' hy'
-
-instance instNeg : Neg CauchySeq where
-  neg x := mk (fun n => -x.run n) <| by
-    intro ε hε
-    let ⟨Nx, hx⟩ := x.cauchy ε hε
-    refine ⟨Nx, ?_⟩
-    intro m n hm hn
-    rw [Rat.sub_eq_add_neg, Rat.neg_neg, Rat.add_comm, ← Rat.sub_eq_add_neg]
-    exact hx hn hm
-
 /-- Every Cauchy sequence is bounded by a positive rational. -/
 theorem bounded (x : CauchySeq) : ∃ B : Rat, 0 < B ∧ ∀ n, Rat.abs (x.run n) < B := by
   obtain ⟨N, hN⟩ := x.cauchy 1 (by decide)
@@ -145,6 +111,82 @@ theorem bounded (x : CauchySeq) : ∃ B : Rat, 0 < B ∧ ∀ n, Rat.abs (x.run n
     rw [Rat.sub_add_cancel] at tri
     exact Std.lt_of_le_of_lt tri s
 
+def ofRat (x : Rat) : CauchySeq where
+  run := fun _ => x
+  cauchy := by
+    intro ε hε
+    refine ⟨0, ?_⟩
+    intro m n hm hn
+    rw [Rat.sub_self, Rat.abs_zero]
+    exact hε
+
+instance instIntCast : IntCast CauchySeq where
+  intCast z := ofRat z
+
+instance instNatCast : NatCast CauchySeq where
+  natCast n := ofRat n
+
+instance instOfNat (n : Nat) : OfNat CauchySeq n := ⟨ofRat n⟩
+
+instance instZero : Zero CauchySeq := ⟨ofRat 0⟩
+
+instance instAdd : Add CauchySeq where
+  add x y := mk (fun n => x.run n + y.run n) <| by
+    intro ε hε
+    let ⟨Nx, hx⟩ := x.cauchy (ε / 2) (Rat.half_pos hε)
+    let ⟨Ny, hy⟩ := y.cauchy (ε / 2) (Rat.half_pos hε)
+    refine ⟨max Nx Ny, ?_⟩
+    intro m n hm hn
+    rw [Nat.max_lt] at hm hn
+    have hx' := hx hm.left hn.left
+    have hy' := hy hm.right hn.right
+    calc (x.run m + y.run m - (x.run n + y.run n)).abs
+      _ = (x.run m + y.run m + (-x.run n + -y.run n)).abs := by simp only [Rat.sub_eq_add_neg, Rat.neg_add]
+      _ = ((x.run m + -x.run n) + (y.run m + -y.run n)).abs := by ac_rfl
+      _ = ((x.run m - x.run n) + (y.run m - y.run n)).abs := by simp only [Rat.sub_eq_add_neg]
+      _ ≤ (x.run m - x.run n).abs + (y.run m - y.run n).abs := Rat.abs_triangle _ _
+      _ < ε := Rat.add_halves ε ▸ Rat.add_lt_add hx' hy'
+
+/-- Addition respects equivalence of Cauchy sequences. -/
+theorem add_equiv {a₁ a₂ b₁ b₂ : CauchySeq} (ha : Equiv a₁ a₂) (hb : Equiv b₁ b₂) :
+    Equiv (a₁ + b₁) (a₂ + b₂) := by
+  intro ε hε
+  have ⟨N₁, h₁⟩ := ha (ε / 2) (Rat.half_pos hε)
+  have ⟨N₂, h₂⟩ := hb (ε / 2) (Rat.half_pos hε)
+  refine ⟨max N₁ N₂, ?_⟩
+  intro n hn
+  rw [Nat.max_lt] at hn
+  have h₁' := h₁ hn.left
+  have h₂' := h₂ hn.right
+  calc ((a₁ + b₁).run n - (a₂ + b₂).run n).abs
+    _ = ((a₁.run n + b₁.run n) - (a₂.run n + b₂.run n)).abs := rfl
+    _ = ((a₁.run n + b₁.run n) + (-a₂.run n + -b₂.run n)).abs := by simp only [Rat.sub_eq_add_neg, Rat.neg_add]
+    _ = ((a₁.run n + -a₂.run n) + (b₁.run n + -b₂.run n)).abs := by ac_rfl
+    _ ≤ (a₁.run n + -a₂.run n).abs + (b₁.run n + -b₂.run n).abs := Rat.abs_triangle _ _
+    _ = (a₁.run n - a₂.run n).abs + (b₁.run n - b₂.run n).abs := by simp only [Rat.sub_eq_add_neg]
+    _ < ε := Rat.add_halves ε ▸ Rat.add_lt_add h₁' h₂'
+
+instance instNeg : Neg CauchySeq where
+  neg x := mk (fun n => -x.run n) <| by
+    intro ε hε
+    let ⟨Nx, hx⟩ := x.cauchy ε hε
+    refine ⟨Nx, ?_⟩
+    intro m n hm hn
+    rw [Rat.sub_eq_add_neg, Rat.neg_neg, Rat.add_comm, ← Rat.sub_eq_add_neg]
+    exact hx hn hm
+
+/-- Negation respects equivalence of Cauchy sequences. -/
+theorem neg_equiv {a b : CauchySeq} (h : Equiv a b) : Equiv (-a) (-b) := by
+  intro ε hε
+  have ⟨N, h⟩ := h ε hε
+  refine ⟨N, ?_⟩
+  intro n hn
+  change (-a.run n - -b.run n).abs < ε
+  rw [Rat.sub_eq_add_neg, ← Rat.neg_add, ← Rat.sub_eq_add_neg, Rat.abs_neg]
+  exact h hn
+
+instance instOne : One CauchySeq := ⟨ofRat 1⟩
+
 instance instMul : Mul CauchySeq where
   mul x y := mk (fun n => x.run n * y.run n) <| by
     intro ε hε
@@ -172,6 +214,36 @@ instance instMul : Mul CauchySeq where
     rw [Rat.add_halves, ← Rat.abs_mul, ← Rat.abs_mul] at s
     rw [Rat.mul_sub_split]
     exact Std.lt_of_le_of_lt (Rat.abs_triangle _ _) s
+
+/-- Multiplication respects equivalence of Cauchy sequences. -/
+theorem mul_equiv {a₁ a₂ b₁ b₂ : CauchySeq} (ha : Equiv a₁ a₂) (hb : Equiv b₁ b₂) :
+    Equiv (a₁ * b₁) (a₂ * b₂) := by
+  intro ε hε
+  obtain ⟨Ba, hBa, hba⟩ := bounded a₁
+  obtain ⟨Bb, hBb, hbb⟩ := bounded b₂
+  have hε2 : 0 < ε / 2 := Rat.half_pos hε
+  have hda : 0 < ε / 2 / Bb := by
+    rw [Rat.div_def]
+    exact Rat.mul_pos hε2 (Rat.inv_pos.mpr hBb)
+  have hdb : 0 < ε / 2 / Ba := by
+    rw [Rat.div_def]
+    exact Rat.mul_pos hε2 (Rat.inv_pos.mpr hBa)
+  obtain ⟨N₁, h₁⟩ := ha (ε / 2 / Bb) hda
+  obtain ⟨N₂, h₂⟩ := hb (ε / 2 / Ba) hdb
+  refine ⟨max N₁ N₂, ?_⟩
+  intro n hn
+  rw [Nat.max_lt] at hn
+  have t1 : Rat.abs (a₁.run n) * Rat.abs (b₁.run n - b₂.run n) < ε / 2 := by
+    have := Rat.mul_lt_mul (hba n) (h₂ hn.right) Rat.abs_nonneg Rat.abs_nonneg
+    rwa [Rat.mul_div_cancel_pos _ hBa] at this
+  have t2 : Rat.abs (b₂.run n) * Rat.abs (a₁.run n - a₂.run n) < ε / 2 := by
+    have := Rat.mul_lt_mul (hbb n) (h₁ hn.left) Rat.abs_nonneg Rat.abs_nonneg
+    rwa [Rat.mul_div_cancel_pos _ hBb] at this
+  have s := Rat.add_lt_add t1 t2
+  rw [Rat.add_halves, ← Rat.abs_mul, ← Rat.abs_mul] at s
+  change (a₁.run n * b₁.run n - a₂.run n * b₂.run n).abs < ε
+  rw [Rat.mul_sub_split]
+  exact Std.lt_of_le_of_lt (Rat.abs_triangle _ _) s
 
 @[simp] theorem zero_run (n : Nat) : (0 : CauchySeq).run n = 0 := rfl
 
