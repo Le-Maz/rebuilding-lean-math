@@ -313,6 +313,75 @@ theorem nodup_filterMap {α β} (g : α → Option β)
       obtain ⟨z, hz, hgz⟩ := List.mem_filterMap.mp hx
       exact h.1 (by rw [hg y z x hy hgz]; exact hz)
 
+/-- Mapping and then `filterMap` is a single `filterMap` of the composite. -/
+theorem filterMap_map {α β γ} (f : α → β) (g : β → Option γ) (A : Multiset α) :
+    (A.map f).filterMap g = A.filterMap (g ∘ f) := by
+  induction A using Quotient.inductionOn with | _ a =>
+  exact congrArg mk (List.filterMap_map ..)
+
+/-- `filterMap some` changes nothing. -/
+theorem filterMap_some {α} (A : Multiset α) : A.filterMap some = A := by
+  induction A using Quotient.inductionOn with | _ a =>
+  exact congrArg mk (List.filterMap_some ..)
+
+/-- Picks a preimage of `y` under `f` if one exists. -/
+noncomputable def preimageFun {α β} (f : α → β) : β → Option α :=
+  open Classical in
+  fun y => if h : ∃ x, f x = y then some (Classical.choose h) else none
+
+/-- Whatever `preimageFun` returns really is a preimage. -/
+theorem preimageFun_spec {α β} (f : α → β) {w : β} {x : α}
+    (hw : preimageFun f w = some x) : f x = w := by
+  by_cases h : ∃ x', f x' = w
+  · simp only [preimageFun, dif_pos h, Option.some.injEq] at hw
+    rw [← hw]
+    exact Classical.choose_spec h
+  · simp [preimageFun, dif_neg h] at hw
+
+/-- For injective `f`, `preimageFun f` recovers the original element. -/
+theorem preimageFun_apply {α β} {f : α → β} (hf : Function.Injective f) (x : α) :
+    preimageFun f (f x) = some x := by
+  have h : ∃ x', f x' = f x := ⟨x, rfl⟩
+  simp only [preimageFun, dif_pos h]
+  exact congrArg some (hf (Classical.choose_spec h))
+
+/-- `filterMap (preimageFun f)` undoes `map f` on lists. -/
+private theorem filterMap_map_preimageFun {α β} {f : α → β} (hf : Function.Injective f) :
+    ∀ l : List α, (l.map f).filterMap (preimageFun f) = l
+  | [] => rfl
+  | x :: t => by
+    rw [List.map_cons, List.filterMap_cons_some (preimageFun_apply hf x),
+      filterMap_map_preimageFun hf t]
+
+/-- For injective `f`, `preimageFun f` is a left inverse of `f` (as an `Option`-valued function). -/
+theorem preimageFun_comp {α β} {f : α → β} (hf : Function.Injective f) :
+    preimageFun f ∘ f = some :=
+  funext (preimageFun_apply hf)
+
+/-- The elements of `D` whose image under `f` is a member of `A`, keeping their multiplicities in `D`. -/
+noncomputable def comapInter {α β} (f : α → β) (A : Multiset β) (D : Multiset α) : Multiset α :=
+  open Classical in filter (fun x => f x ∈ A) D
+
+/--
+Picks one preimage under `f` for each element of `A` that has one, dropping the elements
+that have none. When `f` is injective this is exactly the preimage of `A`.
+-/
+noncomputable def comapOnce {α β} (f : α → β) (A : Multiset β) : Multiset α :=
+  A.filterMap (preimageFun f)
+
+/-- `comapOnce` keeps a multiset duplicate-free. -/
+theorem nodup_comapOnce {α β} (f : α → β) {A : Multiset β}
+    (hA : A.Nodup) : (comapOnce f A).Nodup := by
+  induction A using Quotient.inductionOn with | _ a =>
+  refine nodup_filterMap _ ?_ a hA
+  intro y z x hy hz
+  exact (preimageFun_spec f hy).symm.trans (preimageFun_spec f hz)
+
+/-- For injective `f`, `comapOnce f` is a left inverse of `map f`. -/
+theorem comapOnce_map {α β} {f : α → β} (hf : Function.Injective f)
+    (A : Multiset α) : comapOnce f (A.map f) = A := by
+  rw [comapOnce, filterMap_map, preimageFun_comp hf, filterMap_some]
+
 instance {α} [Repr α] [LE α] [DecidableLE α] [Std.IsLinearOrder α] : Repr (Multiset α) where
   reprPrec A _ :=
     let items := (toSortedList A).map repr

@@ -133,6 +133,22 @@ def mapInjective {α β} (f : α → β) (hf : Function.Injective f) (A : Finset
 def mapDedup {α β} [DecidableEq β] (f : α → β) (A : Finset α) : Finset β :=
   mk (A.val.map f).dedup (Multiset.nodup_dedup _)
 
+/-- The elements of `D` whose image under `f` lies in `A`. -/
+noncomputable def comapInter {α β} (f : α → β) (A : Finset β) (D : Finset α) : Finset α :=
+  open Classical in filter (fun x => f x ∈ A) D
+
+/--
+Picks one preimage under `f` for each element of `A` that has one, dropping the elements
+that have none. When `f` is injective this is exactly the preimage of `A`.
+-/
+noncomputable def comapOnce {α β} (f : α → β) (A : Finset β) : Finset α :=
+  mk (Multiset.comapOnce f A.val) (Multiset.nodup_comapOnce f A.property)
+
+/-- `comapOnce` is a left inverse of `mapInjective`. -/
+theorem comapOnce_mapInjective {α β} {f : α → β} (hf : Function.Injective f)
+    (A : Finset α) : comapOnce f (mapInjective f hf A) = A :=
+  Subtype.ext (Multiset.comapOnce_map hf A.val)
+
 /-- The elements of the finite set as a list in ascending order. -/
 def toSortedList {α} [LE α] [DecidableLE α] [Std.IsLinearOrder α] (A : Finset α) : List α :=
   Multiset.toSortedList A.val
