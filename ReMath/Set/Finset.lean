@@ -42,8 +42,8 @@ def prod {α β} (A : Finset α) (B : Finset β) : Finset (α × β) :=
   mk (A.val.prod B.val) <| by
     obtain ⟨A, hA⟩ := A
     obtain ⟨B, hB⟩ := B
-    induction A using Quotient.inductionOn with | _ a
-    induction B using Quotient.inductionOn with | _ b
+    induction A using Quotient.inductionOn with | _ a =>
+    induction B using Quotient.inductionOn with | _ b =>
     change a.Nodup at hA
     change b.Nodup at hB
     change (a.flatMap <| b.map ∘ Prod.mk).Nodup
@@ -120,5 +120,37 @@ def filter {α} (p : α → Prop) [DecidablePred p] (A : Finset α) : Finset α 
 /-- `Sep` takes an arbitrary predicate, so decidability is supplied classically. -/
 noncomputable instance {α} : Sep α (Finset α) :=
   ⟨fun p A => open Classical in filter p A⟩
+
+/-- Applies an injective function to every element of the finite set. -/
+def mapInjective {α β} (f : α → β) (hf : Function.Injective f) (A : Finset α) : Finset β :=
+  mk (A.val.map f) <| by
+    obtain ⟨A, hA⟩ := A
+    induction A using Quotient.inductionOn with | _ a =>
+    change (a.map f).Nodup
+    exact List.Pairwise.map f (fun y z h e => h (hf e)) hA
+
+/-- Applies a function to every element of the finite set, merging elements that collide. -/
+def mapDedup {α β} [DecidableEq β] (f : α → β) (A : Finset α) : Finset β :=
+  mk (A.val.map f).dedup (Multiset.nodup_dedup _)
+
+/-- The elements of the finite set as a list in ascending order. -/
+def toSortedList {α} [LE α] [DecidableLE α] [Std.IsLinearOrder α] (A : Finset α) : List α :=
+  Multiset.toSortedList A.val
+
+/-- The sorted list of a finite set has no duplicates. -/
+theorem toSortedList_nodup {α} [LE α] [DecidableLE α] [Std.IsLinearOrder α]
+    (A : Finset α) : (toSortedList A).Nodup := by
+  obtain ⟨A, hA⟩ := A
+  induction A using Quotient.inductionOn with | _ a =>
+  change (List.mergeSort a).Nodup
+  exact ((List.mergeSort_perm a _).nodup_iff).mpr hA
+
+/-- Prints a finite set in sorted order, e.g. `{1, 2, 5}`. -/
+instance {α} [Repr α] [LE α] [DecidableLE α] [Std.IsLinearOrder α] : Repr (Finset α) where
+  reprPrec A p := reprPrec A.val p
+
+/-- Fallback for types without an order: elements are sorted by their rendered text. -/
+instance (priority := low) {α} [Repr α] : Repr (Finset α) where
+  reprPrec A p := reprPrec A.val p
 
 end Finset

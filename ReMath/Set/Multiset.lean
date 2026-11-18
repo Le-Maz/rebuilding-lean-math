@@ -208,4 +208,120 @@ def filter {α} (p : α → Prop) [DecidablePred p] (A : Multiset α) : Multiset
 noncomputable instance {α} : Sep α (Multiset α) :=
   ⟨fun p A => open Classical in filter p A⟩
 
+/-- Applies `f` to every element, preserving multiplicities. -/
+def map {α β} (f : α → β) (A : Multiset α) : Multiset β :=
+  A.liftOn (fun a => mk <| a.map f) <| by
+    intro a b h
+    exact Quotient.sound (h.map f)
+
+/-- Removes repeated elements from a list, keeping the last occurrence of each. -/
+def listDedup {α} [DecidableEq α] : List α → List α
+  | [] => []
+  | x :: t => if x ∈ t then listDedup t else x :: listDedup t
+
+/-- `listDedup` keeps exactly the elements of the original list. -/
+theorem mem_listDedup {α} [DecidableEq α] (x : α) (l : List α) :
+    x ∈ listDedup l ↔ x ∈ l := by
+  induction l with
+  | nil => simp [listDedup]
+  | cons y t ih =>
+    by_cases hy : y ∈ t
+    · rw [listDedup, if_pos hy, ih]
+      constructor
+      · exact List.mem_cons_of_mem y
+      · intro h
+        rcases List.mem_cons.mp h with rfl | h
+        · exact hy
+        · exact h
+    · rw [listDedup, if_neg hy, List.mem_cons, List.mem_cons, ih]
+
+/-- `listDedup` produces a duplicate-free list. -/
+theorem nodup_listDedup {α} [DecidableEq α] (l : List α) : (listDedup l).Nodup := by
+  induction l with
+  | nil => exact List.nodup_nil
+  | cons y t ih =>
+    by_cases hy : y ∈ t
+    · rw [listDedup, if_pos hy]
+      exact ih
+    · rw [listDedup, if_neg hy]
+      exact List.nodup_cons.mpr ⟨fun h => hy ((mem_listDedup y t).mp h), ih⟩
+
+/-- Duplicate-free lists with the same members are permutations of each other. -/
+theorem perm_of_nodup_of_mem_iff {α} [DecidableEq α] {l₁ l₂ : List α}
+    (h₁ : l₁.Nodup) (h₂ : l₂.Nodup) (h : ∀ x, x ∈ l₁ ↔ x ∈ l₂) :
+    l₁.Perm l₂ := by
+  rw [List.perm_iff_count]
+  intro x
+  have c₁ := List.nodup_iff_count.mp h₁ x
+  have c₂ := List.nodup_iff_count.mp h₂ x
+  by_cases hx : x ∈ l₁
+  · have p₁ := List.count_pos_iff.mpr hx
+    have p₂ := List.count_pos_iff.mpr ((h x).mp hx)
+    omega
+  · have hx₂ : x ∉ l₂ := fun h' => hx ((h x).mpr h')
+    rw [List.count_eq_zero.mpr hx, List.count_eq_zero.mpr hx₂]
+
+/-- Removes duplicates, leaving every element with multiplicity one. -/
+def dedup {α} [DecidableEq α] (A : Multiset α) : Multiset α :=
+  A.liftOn (fun a => mk <| listDedup a) <| by
+    intro a b h
+    apply Quotient.sound
+    refine perm_of_nodup_of_mem_iff (nodup_listDedup a) (nodup_listDedup b) ?_
+    intro x
+    rw [mem_listDedup, mem_listDedup]
+    exact h.mem_iff
+
+/-- The result of `dedup` is duplicate-free. -/
+theorem nodup_dedup {α} [DecidableEq α] (A : Multiset α) : A.dedup.Nodup := by
+  induction A using Quotient.inductionOn with | _ a =>
+  exact nodup_listDedup a
+
+def toSortedList {α} [LE α] [DecidableLE α] [Std.IsLinearOrder α] (A : Multiset α) : List α :=
+  A.liftOn List.mergeSort <| by
+    intro a b h
+    have hle : ∀ l : List α, (List.mergeSort l).Pairwise (· ≤ ·) := fun l => by
+      have := List.pairwise_mergeSort (l := l) (le := fun x y => decide (x ≤ y))
+        (by simpa using fun x y z => (Std.le_trans : x ≤ y → y ≤ z → x ≤ z))
+        (by simpa using fun x y => (Std.le_total : x ≤ y ∨ y ≤ x))
+      simpa using this
+    exact List.Perm.eq_of_pairwise
+      (fun x y _ _ hxy hyx => Std.le_antisymm hxy hyx)
+      (hle a) (hle b)
+      ((List.mergeSort_perm a _).trans (h.trans (List.mergeSort_perm b _).symm))
+
+/-- Applies `g` to every element, keeping only the `some` results. -/
+def filterMap {α β} (g : α → Option β) (A : Multiset α) : Multiset β :=
+  A.liftOn (fun a => mk <| a.filterMap g) <| by
+    intro a b h
+    exact Quotient.sound (h.filterMap g)
+
+/-- `filterMap` with a function that never sends two inputs to the same output keeps a list duplicate-free. -/
+theorem nodup_filterMap {α β} (g : α → Option β)
+    (hg : ∀ y z x, g y = some x → g z = some x → y = z) :
+    ∀ l : List α, l.Nodup → (l.filterMap g).Nodup
+  | [], _ => List.nodup_nil
+  | y :: t, h => by
+    rw [List.nodup_cons] at h
+    cases hy : g y with
+    | none =>
+      rw [List.filterMap_cons_none hy]
+      exact nodup_filterMap g hg t h.2
+    | some x =>
+      rw [List.filterMap_cons_some hy, List.nodup_cons]
+      refine ⟨?_, nodup_filterMap g hg t h.2⟩
+      intro hx
+      obtain ⟨z, hz, hgz⟩ := List.mem_filterMap.mp hx
+      exact h.1 (by rw [hg y z x hy hgz]; exact hz)
+
+instance {α} [Repr α] [LE α] [DecidableLE α] [Std.IsLinearOrder α] : Repr (Multiset α) where
+  reprPrec A _ :=
+    let items := (toSortedList A).map repr
+    Std.Format.bracket "{" (Std.Format.joinSep items ("," ++ Std.Format.line)) "}"
+
+/-- Fallback for types without an order: elements are sorted by their rendered text. -/
+instance (priority := low) {α} [Repr α] : Repr (Multiset α) where
+  reprPrec A _ :=
+    let items := toSortedList (A.map fun x => toString (repr x))
+    Std.Format.bracket "{" (Std.Format.joinSep (items.map Std.Format.text) ("," ++ Std.Format.line)) "}"
+
 end Multiset
